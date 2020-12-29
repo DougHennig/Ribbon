@@ -828,6 +828,7 @@ DEFINE CLASS sfribbonmenubar AS sfribbontoolbarbuttonhorizontal OF "sfribbon.vcx
 		if This.Menu.Count = 0
 			This.Parent.Hide()
 			dodefault()
+			release loThisform
 		endif This.Menu.Count = 0
 		
 	ENDPROC
@@ -904,6 +905,7 @@ DEFINE CLASS sfribbonmenuform AS form
 	KeyPreview = .T.
 	Left = 0
 	Name = "sfribbonmenuform"
+	ShowWindow = 2
 	TitleBar = 0
 	Top = 0
 	Width = 136
@@ -979,6 +981,7 @@ DEFINE CLASS sfribbonmenuform AS form
 		if mdown()
 			This.Enabled = .F.
 			This.Parent.Visible = .F.
+			release loThisform
 		endif mdown()
 		
 	ENDPROC

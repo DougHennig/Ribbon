@@ -235,7 +235,7 @@ To set the theme for the ribbon, set its Theme property to the name of the desir
 
 All of the classes for the ribbon components are in SFRibbon.vcx.
 
-* SFRibbonBase: the base class for most ribbon components except as shown; a subclass of Container.
+* SFRibbonBase: the parent class for most ribbon components except as shown; a subclass of Container.
 
 * SFRibbon: the ribbon class.
 
@@ -247,11 +247,11 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 
 * SFRibbonToolbarButton: a regular button class.
 
-* SFRibbonToolbarButtonHorizontal: a horizontal button class.
+* SFRibbonToolbarButtonHorizontal: a horizontal button class; subclass of SFRibbonToolbarButton.
 
 * SFRibbonMenu: a class used to define menus; a subclass of Custom.
 
-* SFRibbonMenuBar: the menu bar class.
+* SFRibbonMenuBar: the menu bar class; subclass of SFRibbonToolbarButtonHorizontal.
 
 * SFRibbonMenuSeparator: the menu separator bar class.
 
