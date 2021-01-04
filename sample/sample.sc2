@@ -32,6 +32,7 @@ DEFINE CLASS form1 AS form
 	Height = 478
 	Left = 0
 	Name = "Form1"
+	ShowWindow = 2
 	Top = 0
 	Width = 841
 
@@ -275,6 +276,11 @@ DEFINE CLASS form1 AS form
 		
 			.Home.Selected = .T.
 		endwith
+		
+	ENDPROC
+
+	PROCEDURE QueryUnload
+		clear events
 		
 	ENDPROC
 

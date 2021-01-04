@@ -10,6 +10,8 @@ Here is the form with the "Send / Receive" tab selected:
 
 This project was created by Doug Hennig.
 
+For guidelines about ribbon controls, see <a href="https://docs.microsoft.com/en-us/windows/win32/uxguide/cmd-ribbons" target="_blank">https://docs.microsoft.com/en-us/windows/win32/uxguide/cmd-ribbons</a>.
+
 ## Using the Ribbon
 
 To add a ribbon to a form, drop an instance of the SFRibbon class in SFRibbon.vcx onto the form and then write code in a method of the form or perhaps the Init method of the ribbon object to add tabs, sections, and buttons to it; see the Components section below for details.
@@ -247,11 +249,11 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 
 * SFRibbonToolbarButton: a regular button class.
 
-* SFRibbonToolbarButtonHorizontal: a horizontal button class; subclass of SFRibbonToolbarButton.
+* SFRibbonToolbarButtonHorizontal: a horizontal button class; a subclass of SFRibbonToolbarButton.
 
 * SFRibbonMenu: a class used to define menus; a subclass of Custom.
 
-* SFRibbonMenuBar: the menu bar class; subclass of SFRibbonToolbarButtonHorizontal.
+* SFRibbonMenuBar: the menu bar class; a subclass of SFRibbonToolbarButtonHorizontal.
 
 * SFRibbonMenuSeparator: the menu separator bar class.
 
