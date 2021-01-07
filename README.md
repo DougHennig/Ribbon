@@ -64,7 +64,7 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
     
     To add a horizontal button, call the AddHorizontalButton method of a section, optionally passing the name of the button (if not passed, AddHorizontalButton assigns a unique name).
 
-    Set the Caption, Image, and Command properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption. The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary.
+    Set the Caption, Image, Command, and EnabledExpression properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption. The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary. EnabledExpression optionally contains an expression (as a string) that Refresh evaluates to determine if the button is enabled.
 
     ```foxpro
     loButton = loSection.AddButton()
@@ -73,6 +73,7 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
         .Image   = 'newmail.png'
         .Command = 'Thisform.NewMail()' + chr(13) + ;
             'Thisform.Refresh()'
+        .EnabledExpression = 'Thisform.IsButtonEnabled()'
     endwith
     loButton = .AddHorizontalButton()
     with loButton
@@ -150,7 +151,7 @@ A ribbon has the following behavior:
 
 * Clicking a button executes the command for that button. If no command was specified and there is no menu for the button (see the next point), a messagebox with "Not implemented" appears.
 
-* A down arrow appears in the caption for a button if it has a menu. Clicking the button displays the menu.
+* A down arrow appears in the caption for a button if it has a menu. Clicking the button displays the menu. Clicking the button again, clicking outside the menu, or moving the mouse outside the form hides the menu.
 
 * Hovering the mouse over a menu bar highlights the bar in the "menuitemhighlightcolor" color specified by the current theme.
 
@@ -258,3 +259,21 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 * SFRibbonMenuSeparator: the menu separator bar class.
 
 * SFRibbonMenuForm: a form class that provides a dropdown menu; a subclass of Form.
+
+## Updates
+
+### 2021-01-06
+
+* Added EnabledExpression to SFRibbonToolbarButton so you can define when a button is enabled without subclassing and putting code into Refresh.
+
+* Made dropdown menus close if the user clicks the button the menu belongs to again, clicks outside the menu, or moves the mouse outside the form.
+
+* Made changing the width of the ribbon programmatically set the width of the border and shadow lines properly.
+
+* Made SFRibbonToolbarButton.Click work with Command containing "Thisform", such as "Thisform.SomeMethod()".
+
+### 2020-12-29
+
+* Made dropdown menus release the public variable loThisform when they're closed and work when the ribbon is in a top-level form.
+
+* Changed Sample.scx to a top-level form.

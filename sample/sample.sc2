@@ -25,6 +25,11 @@ DEFINE CLASS form1 AS form
 	*< OBJECTDATA: ObjPath="cboTheme" UniqueID="" Timestamp="" />
 	*< OBJECTDATA: ObjPath="lblTheme" UniqueID="" Timestamp="" />
 
+	*<DefinedPropArrayMethod>
+		*m: somemethod
+		*p: _memberdata		&& XML Metadata for customizable properties
+	*</DefinedPropArrayMethod>
+
 	BackColor = 255,255,255
 	Caption = "Ribbon Test Form"
 	Desktop = .T.
@@ -35,6 +40,9 @@ DEFINE CLASS form1 AS form
 	ShowWindow = 2
 	Top = 0
 	Width = 841
+	_memberdata = <VFPData>
+		<memberdata name="somemethod" display="SomeMethod"/>
+		</VFPData>		&& XML Metadata for customizable properties
 
 	ADD OBJECT 'cboTheme' AS combobox WITH ;
 		ControlSource = "Thisform.oRibbon.Theme", ;
@@ -100,7 +108,7 @@ DEFINE CLASS form1 AS form
 					with loButton
 						.Caption = 'New' + chr(13) + 'Items'
 						.Image   = lcImagePath + 'newitems.png'
-						.AddBar('E-\<mail Message', "messagebox('Email message')", ;
+						.AddBar('E-\<mail Message', 'Thisform.SomeMethod()', ;
 							lcImagePath + 'newemailsmall.png')
 						.AddBar('\<Appointment', "messagebox('Appointment')", ;
 							lcImagePath + 'appointmentsmall.png')
@@ -281,6 +289,11 @@ DEFINE CLASS form1 AS form
 
 	PROCEDURE QueryUnload
 		clear events
+		
+	ENDPROC
+
+	PROCEDURE somemethod
+		messagebox('This is some form method')
 		
 	ENDPROC
 

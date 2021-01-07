@@ -21,6 +21,7 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		*m: adjusttabs		&& Adjusts the tabs so they align properly
 		*m: gettabs		&& Returns a collection of tabs
 		*m: selecttab		&& Fired when the specified tab is selected
+		*m: width_assign
 		*p: cselectedtab		&& The name of the selected pad
 		*p: tabclass		&& The default tab class
 		*p: tablibrary		&& The default tab library
@@ -49,6 +50,8 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="tabclass" display="TabClass"/>
 		<memberdata name="tablibrary" display="TabLibrary"/>
 		<memberdata name="themes" display="Themes"/>
+		<memberdata name="width" display="Width"/>
+		<memberdata name="width_assign" display="Width_Assign"/>
 		</VFPData>
 
 	ADD OBJECT 'linBottom' AS line WITH ;
@@ -209,14 +212,10 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		local lnI, ;
 			lcTheme
 		
-		* Match our width to the form and set the widths and anchor of the lines.
+		* Match our width to the form.
 		
 		This.Width  = Thisform.Width
 		This.Anchor = 10
-		store This.Width to This.linBottom.Width, This.Line1.Width, This.Line2.Width, ;
-			This.Line3.Width, This.Line4.Width, This.Line5.Width
-		store 10 to This.linBottom.Anchor, This.Line1.Anchor, This.Line2.Anchor, ;
-			This.Line3.Anchor, This.Line4.Anchor, This.Line5.Anchor
 		dodefault()
 		
 		* Create a collection of theme names.
@@ -305,6 +304,14 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 			This.Line4.BorderColor     = This.GetThemeColor('ribbonshadowcolor4')
 			This.Line5.BorderColor     = This.GetThemeColor('ribbonshadowcolor5')
 		endif not empty(This.cThemeColors)
+		
+	ENDPROC
+
+	PROCEDURE width_assign
+		lparameters tnWidth
+		This.Width = tnWidth
+		store tnWidth to This.linBottom.Width, This.Line1.Width, This.Line2.Width, ;
+			This.Line3.Width, This.Line4.Width, This.Line5.Width
 		
 	ENDPROC
 
@@ -540,7 +547,7 @@ DEFINE CLASS sfribbonbase AS container
 		* Status:			Public
 		* Purpose:			Displays a shortcut menu
 		* Author:			Doug Hennig
-		* Last revision:	12/27/2020
+		* Last revision:	01/06/2021
 		* Parameters:		tnRow - the row for the menu (optional: if it isn't
 		*						specified, the mouse position is used)
 		*					tnCol - the column for the menu (optional: if it isn't
@@ -555,13 +562,21 @@ DEFINE CLASS sfribbonbase AS container
 		local lnRow, ;
 			lnCol
 		
+		* If the menu is visible, close it.
+		
+		if This.Menu.Visible
+			This.Menu.HideMenu()
+			release loThisform
+			return
+		endif This.Menu.Visible
+		
 		* Put a reference to the form into a variable so we can access it in the
 		* menu.
 		
-		if type('loThisform') <> 'O'
+		if type('loThisform.Name') <> 'C'
 			public loThisform
 			loThisform = Thisform
-		endif type('loThisform') <> 'O'
+		endif type('loThisform.Name') <> 'C'
 		
 		* Get the row and column to use.
 		
@@ -577,7 +592,7 @@ DEFINE CLASS sfribbonbase AS container
 		* Display the menu if there are any bars.
 		
 		if This.Menu.Count > 0
-			This.Menu.ShowMenu(lnRow, lnCol)
+			This.Menu.ShowMenu(lnRow, lnCol, This.Name)
 		endif This.Menu.Count > 0
 		
 	ENDPROC
@@ -734,9 +749,10 @@ DEFINE CLASS sfribbonmenu AS custom
 		* Status:			Public
 		* Purpose:			Displays the menu
 		* Author:			Doug Hennig
-		* Last Revision:	12/27/2020
-		* Parameters:		tnRow - the row for the menu
-		*					tnCol - the column for the menu
+		* Last Revision:	01/06/2021
+		* Parameters:		tnRow  - the row for the menu
+		*					tnCol  - the column for the menu
+		*					tcName - the name of the object with the menu
 		* Returns:			none
 		* Environment in:	This.Count contains the number of bars
 		*					This.oForm contains a reference to the menu form
@@ -746,7 +762,8 @@ DEFINE CLASS sfribbonmenu AS custom
 		*==============================================================================
 		
 		lparameters tnRow, ;
-			tnCol
+			tnCol, ;
+			tcName
 		local loForm, ;
 			lnTop, ;
 			lnWidth, ;
@@ -782,10 +799,11 @@ DEFINE CLASS sfribbonmenu AS custom
 			loForm.&lcName..Width = lnWidth
 		next lnI
 		with loForm
-			.Height = lnTop   + This.Padding
-			.Width  = lnWidth + This.Padding * 2
-			.Top    = tnRow
-			.Left   = tnCol
+			.Height     = lnTop   + This.Padding
+			.Width      = lnWidth + This.Padding * 2
+			.Top        = tnRow
+			.Left       = tnCol
+			.ObjectName = tcName
 		endwith
 		loForm.Show()
 		
@@ -801,12 +819,7 @@ ENDDEFINE
 DEFINE CLASS sfribbonmenubar AS sfribbontoolbarbuttonhorizontal OF "sfribbon.vcx" 
  	*< CLASSDATA: Baseclass="container" Timestamp="" Scale="Pixels" Uniqueid="" />
 
-	*<DefinedPropArrayMethod>
-		*p: enabledexpression		&& The expression used to determine if the bar is enabled
-	*</DefinedPropArrayMethod>
-
 	BackColor = 255,255,255
-	enabledexpression = 		&& The expression used to determine if the bar is enabled
 	Name = "sfribbonmenubar"
 	_memberdata = <VFPData>
 		<memberdata name="enabledexpression" display="EnabledExpression"/>
@@ -863,7 +876,7 @@ DEFINE CLASS sfribbonmenubar AS sfribbontoolbarbuttonhorizontal OF "sfribbon.vcx
 		
 	ENDPROC
 
-	PROCEDURE showmenu
+	PROCEDURE showmenu		&& Displays the menu
 		* Display the submenu beside ourselves.
 		
 		if not This.Menu.Visible
@@ -892,6 +905,7 @@ DEFINE CLASS sfribbonmenuform AS form
 
 	*<DefinedPropArrayMethod>
 		*m: calculatewidth		&& Calculate the width
+		*p: objectname		&& The name of the object that has the menu
 		*p: _memberdata		&& XML Metadata for customizable properties
 	*</DefinedPropArrayMethod>
 
@@ -905,12 +919,14 @@ DEFINE CLASS sfribbonmenuform AS form
 	KeyPreview = .T.
 	Left = 0
 	Name = "sfribbonmenuform"
+	objectname = 		&& The name of the object that has the menu
 	ShowWindow = 2
 	TitleBar = 0
 	Top = 0
 	Width = 136
 	_memberdata = <VFPData>
 		<memberdata name="calculatewidth" display="CalculateWidth"/>
+		<memberdata name="objectname" display="ObjectName"/>
 		</VFPData>		&& XML Metadata for customizable properties
 
 	ADD OBJECT 'shpBorder' AS shape WITH ;
@@ -926,7 +942,7 @@ DEFINE CLASS sfribbonmenuform AS form
 	ADD OBJECT 'tmrClick' AS timer WITH ;
 		Enabled = .F., ;
 		Height = 23, ;
-		Interval = 50, ;
+		Interval = 30, ;
 		Left = 60, ;
 		Name = "tmrClick", ;
 		Top = 10, ;
@@ -978,11 +994,32 @@ DEFINE CLASS sfribbonmenuform AS form
 	ENDPROC
 
 	PROCEDURE tmrClick.Timer
-		if mdown()
-			This.Enabled = .F.
+		* If the user clicks outside the menu or moves the mouse outside the form,
+		* close the menu.
+		
+		local llDown, ;
+			laMouse[1], ;
+			lnMouse, ;
+			llMouseOutsideForm, ;
+			lcObjectName, ;
+			llClickOutsideMenu
+		#define VK_LBUTTON 0x01
+		declare integer GetAsyncKeyState in user32 integer vKey
+		llDown             = GetAsyncKeyState(VK_LBUTTON) > 0 or mdown()
+			&& use GetAsyncKeyState because MDOWN() is .F. if click outside form
+		lnMouse            = amouseobj(laMouse, 1)
+		llMouseOutsideForm = lnMouse > 0 and laMouse[2].Name = 'Screen'
+		lcObjectName       = iif(lnMouse > 0 and ;
+			type('laMouse[1].Parent.Type') = 'C' and 'Button' $ laMouse[1].Parent.Type, ;
+			laMouse[1].Parent.Name, laMouse[1].Name)
+			&& if the user clicks a member of the button, use the button name
+		llClickOutsideMenu = llDown and (lnMouse = 0 or (laMouse[2] <> Thisform and ;
+			lcObjectName <> Thisform.ObjectName))
+		if llMouseOutsideForm or llClickOutsideMenu
+			This.Enabled        = .F.
 			This.Parent.Visible = .F.
 			release loThisform
-		endif mdown()
+		endif mdown() ...
 		
 	ENDPROC
 
@@ -1395,6 +1432,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*m: image_assign
 		*p: caption		&& The caption for the button label
 		*p: command		&& The command to execute when the button is clicked
+		*p: enabledexpression		&& An expression that determines if the button is enabled
 		*p: highlightedcolor		&& The color when the button is highlighted
 		*p: image		&& The image for the button
 		*p: nbackcolor		&& The normal backcolor
@@ -1405,6 +1443,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	BackColor = 243,242,241
 	caption = 		&& The caption for the button label
 	command = 		&& The command to execute when the button is clicked
+	enabledexpression = 		&& An expression that determines if the button is enabled
 	Height = 72
 	highlightedcolor = 200,198,196		&& The color when the button is highlighted
 	image = 		&& The image for the button
@@ -1429,6 +1468,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="padding" display="Padding"/>
 		<memberdata name="addbar" display="AddBar"/>
 		<memberdata name="nlines" display="nLines"/>
+		<memberdata name="enabledexpression" display="EnabledExpression"/>
 		</VFPData>
 
 	ADD OBJECT 'imgButton' AS image WITH ;
@@ -1552,11 +1592,20 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	ENDPROC
 
 	PROCEDURE Click
-		* Execute the command if we have one or display the menu if not.
+		* Execute the command if we have one or display the menu if not. Note that
+		* references to Thisform have to be changed to an object reference because
+		* EXECSCRIPT executes outside the object mechanism.
 		
+		local lcCommand
 		do case
 			case not empty(This.Command)
-				execscript(This.Command)
+				lcCommand  = This.Command
+				if type('loThisform') <> 'O'
+					private loThisform
+					lcCommand  = strtran(lcCommand, 'Thisform', 'loThisform', -1, -1, 1)
+					loThisform = Thisform
+				endif type('loThisform') <> 'O'
+				execscript(lcCommand)
 			case This.Menu.Count > 0
 				This.ShowMenu()
 			otherwise
@@ -1630,15 +1679,23 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		
 	ENDPROC
 
+	PROCEDURE Refresh
+		* If we have an EnabledExpression expression, use it to determine if the button
+		* is enabled.
+		
+		if not empty(This.EnabledExpression)
+			This.Enabled = evaluate(This.EnabledExpression)
+		endif not empty(This.EnabledExpression)
+		
+	ENDPROC
+
 	PROCEDURE showmenu
 		* Display the menu below ourselves.
 		
-		if not This.Menu.Visible
-			dodefault(objtoclient(This, 1) + This.Height + Thisform.Top + ;
-					sysmetric(9) + sysmetric(4) + ;
-					iif(Thisform.Desktop, 0, sysmetric(9) + sysmetric(20)), ;
-				objtoclient(This, 2) + Thisform.Left + sysmetric(3))
-		endif not This.Menu.Visible
+		dodefault(objtoclient(This, 1) + This.Height + Thisform.Top + ;
+				sysmetric(9) + sysmetric(4) + ;
+				iif(Thisform.Desktop, 0, sysmetric(9) + sysmetric(20)), ;
+			objtoclient(This, 2) + Thisform.Left + sysmetric(3))
 		
 	ENDPROC
 
