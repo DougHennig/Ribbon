@@ -232,13 +232,6 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		
 	ENDPROC
 
-	PROCEDURE RightClick
-		* Display a shortcut menu.
-		
-		This.ShowMenu()
-		
-	ENDPROC
-
 	PROCEDURE selecttab		&& Fired when the specified tab is selected
 		*==============================================================================
 		* Method:			SelectTab
@@ -275,7 +268,8 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		* If one of the controls in the toolbar has focus, hide it or else it'll still
 		* be visible.
 		
-				if type('Thisform.ActiveControl.Name') = 'C'
+				if type('Thisform.ActiveControl.Name') = 'C' and ;
+					pemstatus(Thisform.ActiveControl, 'Visible', 5)
 					loControl = Thisform.ActiveControl
 					loParent  = loControl.Parent
 					do while vartype(loParent) = 'O' and loParent <> loOldToolbar and ;
@@ -618,6 +612,7 @@ DEFINE CLASS sfribbonmenu AS custom
 
 	*<DefinedPropArrayMethod>
 		*m: addbar		&& Adds a bar to the menu
+		*m: clear		&& Clears the menu
 		*m: hidemenu		&& Hides the menu
 		*m: showmenu		&& Displays the menu
 		*m: visible_access
@@ -648,6 +643,7 @@ DEFINE CLASS sfribbonmenu AS custom
 		<memberdata name="visible_access" display="Visible_Access"/>
 		<memberdata name="theme" display="Theme"/>
 		<memberdata name="hidemenu" display="HideMenu"/>
+		<memberdata name="clear" display="Clear"/>
 		</VFPData>		&& XML Metadata for customizable properties
 	
 	PROCEDURE addbar		&& Adds a bar to the menu
@@ -713,6 +709,24 @@ DEFINE CLASS sfribbonmenu AS custom
 		endif empty(tcPrompt)
 		loBar.Visible = .T.
 		return loBar
+		
+	ENDPROC
+
+	PROCEDURE clear		&& Clears the menu
+		*==============================================================================
+		* Method:			Clear
+		* Status:			Public
+		* Purpose:			Clears the menu
+		* Author:			Doug Hennig
+		* Last Revision:	01/18/2021
+		* Parameters:		none
+		* Returns:			.T.
+		* Environment in:	none
+		* Environment out:	This.oForm is nulled and This.Count is set to 0
+		*==============================================================================
+		
+		This.oForm = NULL
+		This.Count = 0
 		
 	ENDPROC
 
@@ -1295,6 +1309,7 @@ DEFINE CLASS sfribbontab AS sfribbonbase OF "sfribbon.vcx"
 		* SFRibbon.SelectTab hid it, make it visible again.
 		
 			if type('Thisform.ActiveControl.Name') = 'C' and ;
+				pemstatus(Thisform.ActiveControl, 'Visible', 5) and ;
 				not Thisform.ActiveControl.Visible
 				loControl = Thisform.ActiveControl
 				loParent  = loControl.Parent
@@ -1430,6 +1445,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*m: calculatewidth		&& Calculates the width of the button
 		*m: caption_assign
 		*m: image_assign
+		*m: wordwrap_assign
 		*p: caption		&& The caption for the button label
 		*p: command		&& The command to execute when the button is clicked
 		*p: enabledexpression		&& An expression that determines if the button is enabled
@@ -1437,6 +1453,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*p: image		&& The image for the button
 		*p: nbackcolor		&& The normal backcolor
 		*p: nlines		&& The number of lines in the label
+		*p: wordwrap		&& .T. to auto-wrap the caption for the button; .F. to size the button for the caption
 	*</DefinedPropArrayMethod>
 
 	PROTECTED nbackcolor,nlines
@@ -1453,6 +1470,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	padding = 8
 	type = Button
 	Width = 72
+	wordwrap = .F.		&& .T. to auto-wrap the caption for the button; .F. to size the button for the caption
 	_memberdata = <VFPData>
 		<memberdata name="highlightedcolor" display="HighlightedColor"/>
 		<memberdata name="nbackcolor" display="nBackColor"/>
@@ -1469,6 +1487,8 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="addbar" display="AddBar"/>
 		<memberdata name="nlines" display="nLines"/>
 		<memberdata name="enabledexpression" display="EnabledExpression"/>
+		<memberdata name="wordwrap" display="WordWrap"/>
+		<memberdata name="wordwrap_assign" display="WordWrap_Assign"/>
 		</VFPData>
 
 	ADD OBJECT 'imgButton' AS image WITH ;
@@ -1549,23 +1569,30 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		* Status:			Public
 		* Purpose:			Calculates the width of the button
 		* Author:			Doug Hennig
-		* Last Revision:	12/22/2020
+		* Last Revision:	01/07/2021
 		* Parameters:		none
 		* Returns:			none
 		* Environment in:	Padding contains the desired space
-		* Environment out:	the width of the button and its section has been updated
+		*					WordWrap is .T. to wrap the caption, .F. to size the button
+		* Environment out:	the width of the button and its section may been updated
+		*					the down button has been positioned properly
 		*					This.nLines contains the number of lines for the label
 		*==============================================================================
 		
 		local lnWidth
-		This.oGDI.MeasureString(This.lblButton.Caption)
-		lnWidth = max(ceiling(This.oGDI.nWidth) + 2 * This.lblButton.Left, ;
-			This.imgButton.Width + 2 * This.Padding)
-			&& use a width of the label or the image, whichever is wider
-			&& This.lblButton.Width is inaccurate if the form isn't visible yet
-		if This.Width <> lnWidth
-			This.Width = lnWidth
-			This.lblButton.Width = This.Width - 2 * This.lblButton.Left
+		if not empty(This.Caption)
+			if This.WordWrap
+				This.oGDI.SetSize(This.lblButton.Width, This.lblButton.Height)
+			endif This.WordWrap
+			This.oGDI.MeasureString(This.lblButton.Caption)
+			lnWidth = max(ceiling(This.oGDI.nWidth) + 2 * This.lblButton.Left, ;
+				This.imgButton.Width + 2 * This.Padding)
+				&& use a width of the label or the image, whichever is wider
+				&& This.lblButton.Width is inaccurate if the form isn't visible yet
+			if This.Width <> lnWidth and not This.WordWrap
+				This.Width = lnWidth
+				This.lblButton.Width = This.Width - 2 * This.lblButton.Left
+			endif This.Width <> lnWidth ...
 			This.imgButton.Left  = int((This.Width - This.imgButton.Width)/2)
 				&& center the image
 		
@@ -1578,9 +1605,9 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 				This.imgDown.Left = This.lblButton.Left + This.lblButton.Width  - 5
 				This.imgDown.Top  = This.lblButton.Top  + This.lblButton.Height - 10
 			endif This.oGDI.nLines = 1
-		endif This.Width <> lnWidth
-		This.nLines = This.oGDI.nLines
-		This.Parent.CalculateWidth()
+			This.nLines = This.oGDI.nLines
+			This.Parent.CalculateWidth()
+		endif not empty(This.Caption)
 		
 	ENDPROC
 
@@ -1704,6 +1731,13 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		dodefault(tcTheme)
 		store This.GetThemeColor('ribbonbackcolor') to This.BackColor, This.nBackColor
 		This.HighlightedColor = This.GetThemeColor('buttonhighlightcolor')
+		
+	ENDPROC
+
+	PROCEDURE wordwrap_assign
+		lparameters tlWordWrap
+		This.WordWrap = tlWordWrap
+		This.CalculateWidth()
 		
 	ENDPROC
 
@@ -1928,7 +1962,7 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 		* Status:			Public
 		* Purpose:			Calculates the width of the section
 		* Author:			Doug Hennig
-		* Last Revision:	12/24/2020
+		* Last Revision:	01/18/2021
 		* Parameters:		none
 		* Returns:			none
 		* Environment in:	none
@@ -1940,7 +1974,8 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 			lcType, ;
 			loControl, ;
 			llVertical, ;
-			lnLeft
+			lnLeft, ;
+			lnCaptionWidth
 		lnWidth = 0
 		for each loControl in This.Controls foxobject
 			lcType = iif(pemstatus(loControl, 'Type', 5), loControl.Type, '')
@@ -1973,10 +2008,10 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 					loControl.Left = max(lnWidth, This.Padding)
 					lnWidth        = max(lnWidth, loControl.Left + loControl.Width)
 					llVertical     = .F.
-				otherwise
 			endcase
 		next loControl
-		This.linSeparator.Left = lnWidth + This.Padding
+		lnCaptionWidth = This.oGDI.GetWidth(This.Caption)
+		This.linSeparator.Left = max(lnWidth, lnCaptionWidth) + This.Padding
 		store This.linSeparator.Left to This.Width, This.lblSection.Width
 		This.Parent.Width = max(This.Parent.Width, This.Left + This.Width)
 		
@@ -1985,6 +2020,14 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 	PROCEDURE caption_assign
 		lparameters tcCaption
 		store tcCaption to This.Caption, This.lblSection.Caption
+		
+	ENDPROC
+
+	PROCEDURE Init
+		* Set the font for the SFGDIMeasureString object.
+		
+		dodefault()
+		This.oGDI.SetFont(This.lblSection.FontName, This.lblSection.FontSize)
 		
 	ENDPROC
 

@@ -64,7 +64,7 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
     
     To add a horizontal button, call the AddHorizontalButton method of a section, optionally passing the name of the button (if not passed, AddHorizontalButton assigns a unique name).
 
-    Set the Caption, Image, Command, and EnabledExpression properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption. The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary. EnabledExpression optionally contains an expression (as a string) that Refresh evaluates to determine if the button is enabled.
+    Set the Caption, Image, Command, WordWrap, and EnabledExpression properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption or set WordWrap to .T.. The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary. EnabledExpression optionally contains an expression (as a string) that Refresh evaluates to determine if the button is enabled.
 
     ```foxpro
     loButton = loSection.AddButton()
@@ -77,9 +77,11 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
     endwith
     loButton = .AddHorizontalButton()
     with loButton
-        .Caption = 'Ignore'
-        .Image   = 'ignore.png'
-        .Command = 'Thisform.Ignore()'
+        .WordWrap = .T.
+        .Caption  = 'Ignore Message'
+            && will be wrapped onto two lines
+        .Image    = 'ignore.png'
+        .Command  = 'Thisform.Ignore()'
     endwith
     ```
 
@@ -261,6 +263,16 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 * SFRibbonMenuForm: a form class that provides a dropdown menu; a subclass of Form.
 
 ## Updates
+
+### 2021-01-28
+
+* Added a WordWrap property to SFRibbonToolbarButton; setting it to .T. forces the caption to span multiple lines if necessary.
+
+* The width of the section's caption is now taken into account when determining the section's width.
+
+* Added a Clear method to SFRibbonMenu so you can remove all the items from an object's menu.
+
+* Fixed a bug: ensures the active control in a form has a Visible property before checking it (Visible may have been made protected in a subclass).
 
 ### 2021-01-06
 
