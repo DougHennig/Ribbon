@@ -1374,6 +1374,7 @@ DEFINE CLASS sfribbontoolbar AS sfribbonbase OF "sfribbon.vcx"
 
 	*<DefinedPropArrayMethod>
 		*m: addsection		&& Adds a section to the toolbar
+		*m: adjustsections		&& Adjusts the location of sections when the width of one changes
 		*p: sectionclass		&& The default section class
 		*p: sectionlibrary		&& The default section library
 	*</DefinedPropArrayMethod>
@@ -1390,6 +1391,7 @@ DEFINE CLASS sfribbontoolbar AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="addsection" display="AddSection"/>
 		<memberdata name="sectionclass" display="SectionClass"/>
 		<memberdata name="sectionlibrary" display="SectionLibrary"/>
+		<memberdata name="adjustsections" display="AdjustSections"/>
 		</VFPData>
 	
 	PROCEDURE addsection		&& Adds a section to the toolbar
@@ -1431,6 +1433,32 @@ DEFINE CLASS sfribbontoolbar AS sfribbonbase OF "sfribbon.vcx"
 		
 	ENDPROC
 
+	PROCEDURE adjustsections		&& Adjusts the location of sections when the width of one changes
+		*==============================================================================
+		* Method:			AdjustSections
+		* Status:			Public
+		* Purpose:			Adjusts the location of sections when the width of one
+		*						changes
+		* Author:			Doug Hennig
+		* Last Revision:	02/11/2021
+		* Parameters:		none
+		* Returns:			none
+		* Environment in:	the toolbar contains sections
+		* Environment out:	the sections have been adjusted so they abut each other and
+		*						the toolbar width has been updated
+		*==============================================================================
+		
+		local lnLeft, ;
+			loControl
+		lnLeft = 0
+		for each loControl in This.Controls foxobject
+			loControl.Left = lnLeft
+			lnLeft = loControl.Left + loControl.Width
+		next loControl
+		This.Width = lnLeft
+		
+	ENDPROC
+
 ENDDEFINE
 
 DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx" 
@@ -1445,6 +1473,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*m: calculatewidth		&& Calculates the width of the button
 		*m: caption_assign
 		*m: image_assign
+		*m: visible_assign
 		*m: wordwrap_assign
 		*p: caption		&& The caption for the button label
 		*p: command		&& The command to execute when the button is clicked
@@ -1469,6 +1498,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	nlines = 0		&& The number of lines in the label
 	padding = 8
 	type = Button
+	Visible = .T.
 	Width = 72
 	wordwrap = .F.		&& .T. to auto-wrap the caption for the button; .F. to size the button for the caption
 	_memberdata = <VFPData>
@@ -1489,6 +1519,8 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="enabledexpression" display="EnabledExpression"/>
 		<memberdata name="wordwrap" display="WordWrap"/>
 		<memberdata name="wordwrap_assign" display="WordWrap_Assign"/>
+		<memberdata name="visible" display="Visible"/>
+		<memberdata name="visible_assign" display="Visible_Assign"/>
 		</VFPData>
 
 	ADD OBJECT 'imgButton' AS image WITH ;
@@ -1734,6 +1766,13 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		
 	ENDPROC
 
+	PROCEDURE visible_assign
+		lparameters tlVisible
+		This.Visible = tlVisible
+		This.Parent.CalculateWidth()
+		
+	ENDPROC
+
 	PROCEDURE wordwrap_assign
 		lparameters tlWordWrap
 		This.WordWrap = tlWordWrap
@@ -1962,7 +2001,7 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 		* Status:			Public
 		* Purpose:			Calculates the width of the section
 		* Author:			Doug Hennig
-		* Last Revision:	01/18/2021
+		* Last Revision:	02/11/2021
 		* Parameters:		none
 		* Returns:			none
 		* Environment in:	none
@@ -1981,9 +2020,11 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 			lcType = iif(pemstatus(loControl, 'Type', 5), loControl.Type, '')
 			do case
 		
-		* Do nothing if this is the separator or section label.
+		* Do nothing if this is the separator or section label or the control isn't
+		* visible.
 		
-				case inlist(loControl.Name, 'linSeparator', 'lblSection')
+				case inlist(loControl.Name, 'linSeparator', 'lblSection') or ;
+					(pemstatus(loControl, 'Visible', 5) and not loControl.Visible)
 					&& do nothing
 		
 		* Horizontal button: set the Left property and if this isn't the first one,
@@ -2013,7 +2054,7 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 		lnCaptionWidth = This.oGDI.GetWidth(This.Caption)
 		This.linSeparator.Left = max(lnWidth, lnCaptionWidth) + This.Padding
 		store This.linSeparator.Left to This.Width, This.lblSection.Width
-		This.Parent.Width = max(This.Parent.Width, This.Left + This.Width)
+		This.Parent.AdjustSections()
 		
 	ENDPROC
 

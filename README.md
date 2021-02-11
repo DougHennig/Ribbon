@@ -264,6 +264,10 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 
 ## Updates
 
+### 2021-02-11
+
+* Changing the Visible property of a button now adjusts the toolbar so buttons and sections are always beside each other with no space in between.
+
 ### 2021-01-28
 
 * Added a WordWrap property to SFRibbonToolbarButton; setting it to .T. forces the caption to span multiple lines if necessary.
