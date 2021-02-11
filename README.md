@@ -293,3 +293,7 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 * Made dropdown menus release the public variable loThisform when they're closed and work when the ribbon is in a top-level form.
 
 * Changed Sample.scx to a top-level form.
+
+### 2020-12-28
+
+* Initial release.
