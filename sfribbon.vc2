@@ -1455,7 +1455,8 @@ DEFINE CLASS sfribbontoolbar AS sfribbonbase OF "sfribbon.vcx"
 			loControl.Left = lnLeft
 			lnLeft = loControl.Left + loControl.Width
 		next loControl
-		This.Width = lnLeft
+		This.Width = lnLeft + 1
+		
 		
 	ENDPROC
 
@@ -1661,9 +1662,11 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 				lcCommand  = This.Command
 				if type('loThisform') <> 'O'
 					private loThisform
-					lcCommand  = strtran(lcCommand, 'Thisform', 'loThisform', -1, -1, 1)
 					loThisform = Thisform
 				endif type('loThisform') <> 'O'
+				if atc('loThisform', lcCommand) = 0
+					lcCommand = strtran(lcCommand, 'Thisform', 'loThisform', -1, -1, 1)
+				endif atc('loThisform', lcCommand) = 0
 				execscript(lcCommand)
 			case This.Menu.Count > 0
 				This.ShowMenu()
