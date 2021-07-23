@@ -1474,6 +1474,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*m: calculatewidth		&& Calculates the width of the button
 		*m: caption_assign
 		*m: image_assign
+		*m: tooltiptext_assign
 		*m: visible_assign
 		*m: wordwrap_assign
 		*p: caption		&& The caption for the button label
@@ -1500,6 +1501,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	nbackcolor = 0		&& The normal backcolor
 	nlines = 0		&& The number of lines in the label
 	padding = 8
+	ToolTipText = ""
 	type = Button
 	Visible = .T.
 	Width = 72
@@ -1525,6 +1527,8 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="visible" display="Visible"/>
 		<memberdata name="visible_assign" display="Visible_Assign"/>
 		<memberdata name="disabledimage" display="DisabledImage"/>
+		<memberdata name="tooltiptext" display="ToolTipText"/>
+		<memberdata name="tooltiptext_assign" display="ToolTipText_Assign"/>
 		</VFPData>
 
 	ADD OBJECT 'imgButton' AS image WITH ;
@@ -1737,16 +1741,13 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	ENDPROC
 
 	PROCEDURE MouseLeave
-		* When the user moves the mouse outside the button, make it normal if it's
-		* enabled.
+		* When the user moves the mouse outside the button, make it normal.
 		
 		lparameters tnButton, ;
 			tnShift, ;
 			tnXCoord, ;
 			tnYCoord
-		if This.Enabled
-			This.BackColor = This.nBackColor
-		endif This.Enabled
+		This.BackColor = This.nBackColor
 		
 	ENDPROC
 
@@ -1782,6 +1783,13 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		dodefault(tcTheme)
 		store This.GetThemeColor('ribbonbackcolor') to This.BackColor, This.nBackColor
 		This.HighlightedColor = This.GetThemeColor('buttonhighlightcolor')
+		
+	ENDPROC
+
+	PROCEDURE tooltiptext_assign
+		lparameters tcValue
+		This.ToolTipText = tcValue
+		This.SetAll('ToolTipText', tcValue)
 		
 	ENDPROC
 
