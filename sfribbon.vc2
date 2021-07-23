@@ -840,13 +840,13 @@ DEFINE CLASS sfribbonmenubar AS sfribbontoolbarbuttonhorizontal OF "sfribbon.vcx
 		</VFPData>
 	imgButton.Name = "imgButton"
 	imgButton.Top = 5
+	lblButton.Name = "lblButton"
+	lblButton.Top = 5
 	imgDown.Height = 9
 	imgDown.Name = "imgDown"
 	imgDown.Picture = sfribbonright.png
 	imgDown.Top = 9
 	imgDown.Width = 7
-	lblButton.Name = "lblButton"
-	lblButton.Top = 5
 	
 	PROCEDURE Click
 		* Close the menu and do the usual behavior if we don't have a submenu. If we do
@@ -1478,6 +1478,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*m: wordwrap_assign
 		*p: caption		&& The caption for the button label
 		*p: command		&& The command to execute when the button is clicked
+		*p: disabledimage		&& The disabled image for the button
 		*p: enabledexpression		&& An expression that determines if the button is enabled
 		*p: highlightedcolor		&& The color when the button is highlighted
 		*p: image		&& The image for the button
@@ -1490,6 +1491,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	BackColor = 243,242,241
 	caption = 		&& The caption for the button label
 	command = 		&& The command to execute when the button is clicked
+	disabledimage = 		&& The disabled image for the button
 	enabledexpression = 		&& An expression that determines if the button is enabled
 	Height = 72
 	highlightedcolor = 200,198,196		&& The color when the button is highlighted
@@ -1522,6 +1524,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="wordwrap_assign" display="WordWrap_Assign"/>
 		<memberdata name="visible" display="Visible"/>
 		<memberdata name="visible_assign" display="Visible_Assign"/>
+		<memberdata name="disabledimage" display="DisabledImage"/>
 		</VFPData>
 
 	ADD OBJECT 'imgButton' AS image WITH ;
@@ -1676,6 +1679,19 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		
 	ENDPROC
 
+	PROCEDURE enabled_assign
+		lparameters tlEnabled
+		do case
+			case tlEnabled and not empty(This.Image) and file(This.Image)
+				This.imgButton.Picture = This.Image
+			case not tlEnabled and not empty(This.DisabledImage) and ;
+				file(This.DisabledImage)
+				This.imgButton.Picture = This.DisabledImage
+		endcase
+		dodefault(tlEnabled)
+		
+	ENDPROC
+
 	PROCEDURE image_assign
 		lparameters tcImage
 		store tcImage to This.Image, This.imgButton.Picture
@@ -1812,17 +1828,17 @@ DEFINE CLASS sfribbontoolbarbuttonhorizontal AS sfribbontoolbarbutton OF "sfribb
 	imgButton.Name = "imgButton"
 	imgButton.Top = 5
 	imgButton.Width = 16
-	imgDown.Height = 3
-	imgDown.Left = 85
-	imgDown.Name = "imgDown"
-	imgDown.Top = 10
-	imgDown.Width = 7
 	lblButton.Alignment = 0
 	lblButton.AutoSize = .T.
 	lblButton.Left = 30
 	lblButton.Name = "lblButton"
 	lblButton.Top = 5
 	lblButton.WordWrap = .F.
+	imgDown.Height = 3
+	imgDown.Left = 85
+	imgDown.Name = "imgDown"
+	imgDown.Top = 10
+	imgDown.Width = 7
 	
 	PROCEDURE calculatewidth		&& Calculates the width of the button
 		*==============================================================================

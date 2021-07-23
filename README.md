@@ -64,7 +64,7 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
     
     To add a horizontal button, call the AddHorizontalButton method of a section, optionally passing the name of the button (if not passed, AddHorizontalButton assigns a unique name).
 
-    Set the Caption, Image, Command, WordWrap, and EnabledExpression properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption or set WordWrap to .T.. The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary. EnabledExpression optionally contains an expression (as a string) that Refresh evaluates to determine if the button is enabled.
+    Set the Caption, Image, DisabledImage, Command, WordWrap, and EnabledExpression properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption or set WordWrap to .T.. The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary. EnabledExpression optionally contains an expression (as a string) that Refresh evaluates to determine if the button is enabled.
 
     ```foxpro
     loButton = loSection.AddButton()
@@ -263,6 +263,10 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 * SFRibbonMenuForm: a form class that provides a dropdown menu; a subclass of Form.
 
 ## Updates
+
+### 2021-07-23
+
+* Added DisabledImage property to SFRibbonToolbarButton.
 
 ### 2021-02-11
 
