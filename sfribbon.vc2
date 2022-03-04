@@ -447,8 +447,10 @@ DEFINE CLASS sfribbonbase AS container
 
 	PROCEDURE enabled_assign
 		lparameters tlEnabled
-		This.Enabled = tlEnabled
-		This.SetAll('Enabled', tlEnabled)
+		if This.Enabled <> tlEnabled
+			This.Enabled = tlEnabled
+			This.SetAll('Enabled', tlEnabled)
+		endif This.Enabled <> tlEnabled
 		
 	ENDPROC
 
@@ -1762,8 +1764,12 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		* If we have an EnabledExpression expression, use it to determine if the button
 		* is enabled.
 		
+		local llEnabled
 		if not empty(This.EnabledExpression)
-			This.Enabled = evaluate(This.EnabledExpression)
+			llEnabled = evaluate(This.EnabledExpression)
+			if This.Enabled <> llEnabled
+				This.Enabled = llEnabled
+			endif This.Enabled <> llEnabled
 		endif not empty(This.EnabledExpression)
 		
 	ENDPROC
