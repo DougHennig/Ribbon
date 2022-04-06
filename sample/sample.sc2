@@ -26,6 +26,7 @@ DEFINE CLASS form1 AS form
 	*< OBJECTDATA: ObjPath="lblTheme" UniqueID="" Timestamp="" />
 
 	*<DefinedPropArrayMethod>
+		*m: showtabsonly		&& Called when the ribbon shows tabs only or the full ribbon
 		*m: somemethod
 		*p: _memberdata		&& XML Metadata for customizable properties
 	*</DefinedPropArrayMethod>
@@ -42,6 +43,7 @@ DEFINE CLASS form1 AS form
 	Width = 841
 	_memberdata = <VFPData>
 		<memberdata name="somemethod" display="SomeMethod"/>
+		<memberdata name="showtabsonly" display="ShowTabsOnly"/>
 		</VFPData>		&& XML Metadata for customizable properties
 
 	ADD OBJECT 'cboTheme' AS combobox WITH ;
@@ -79,12 +81,24 @@ DEFINE CLASS form1 AS form
 		Line2.Name = "Line2", ;
 		Line3.Name = "Line3", ;
 		Line4.Name = "Line4", ;
-		Line5.Name = "Line5"
+		Line5.Name = "Line5", ;
+		tmrClick.Name = "tmrClick", ;
+		RIBBONDISPLAYBUTTON.Height = 16, ;
+		RIBBONDISPLAYBUTTON.IMGBUTTON.Height = 16, ;
+		RIBBONDISPLAYBUTTON.IMGBUTTON.Name = "IMGBUTTON", ;
+		RIBBONDISPLAYBUTTON.IMGBUTTON.Width = 16, ;
+		RIBBONDISPLAYBUTTON.Name = "RIBBONDISPLAYBUTTON", ;
+		RIBBONDISPLAYBUTTON.Width = 16
 		*< END OBJECT: ClassLib="..\sfribbon.vcx" BaseClass="container" />
 	
 	PROCEDURE Init
 		lcImagePath = addbs(justpath(getwordnum(sys(16), 3)))
 		with This.oRibbon
+		
+		* Display the RibbonDisplay button.
+		
+			.AllowShowTabsOnly = .T.
+		
 		*** TODO: support special "File" tab
 		
 		* Set up the Home tab.
@@ -170,8 +184,9 @@ DEFINE CLASS form1 AS form
 					endwith
 					loButton = .AddButton()
 					with loButton
-						.Caption = 'Delete'
-						.Image   = lcImagePath + 'delete.png'
+						.Caption           = 'Delete'
+						.Image             = lcImagePath + 'delete.png'
+						.EnabledExpression = '.F.'
 					endwith
 					loButton = .AddButton()
 					with loButton
@@ -285,10 +300,26 @@ DEFINE CLASS form1 AS form
 			.Home.Selected = .T.
 		endwith
 		
+		* Bind the ribbon's ShowTabsOnly event so we can adjust object positions.
+		
+		bindevent(This.oRibbon, 'OnShowTabsOnly', This, 'ShowTabsOnly')
+		
 	ENDPROC
 
 	PROCEDURE QueryUnload
 		clear events
+		
+	ENDPROC
+
+	PROCEDURE showtabsonly		&& Called when the ribbon shows tabs only or the full ribbon
+		lparameters tlShowTabsOnly
+		if tlShowTabsOnly
+			This.lblTheme.Top = 69
+			This.cboTheme.Top = 65
+		else
+			This.lblTheme.Top = 169
+			This.cboTheme.Top = 165
+		endif tlShowTabsOnly
 		
 	ENDPROC
 

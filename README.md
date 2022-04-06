@@ -26,6 +26,10 @@ To deploy the ribbon with your application, add the following to your project:
 
 * SFRibbonRight.png
 
+* SFRibbonCheck.png
+
+* SFRibbonDownLarge.png
+
 * RibbonThemes.xml
 
 Also, include System.app with the files installed with your application.
@@ -87,6 +91,8 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
 
 * A button can have a dropdown menu; if it does, a small down arrow appears in the button caption. The button has a menu if it has any bars. To add a bar to the menu, call the AddBar method of the button, passing the caption for the bar (use "\\<" in front of the character used as the hotkey for the bar just as you would with a VFP menu), the command to execute, optionally an image for the bar (16 x 16), and optionally an expression that determines when the bar is enabled (if it isn't passed, the bar is always enabled).
 
+    To specify a dynamic image, one that's determined when the menu is displayed, use as expression surrounded with curly braces for the third parameter. See the example code for the "The ribbon can also have a dropdown menu" point below.
+    
     To add a separator bar, pass no parameters to AddBar.
     
     To add a submenu to a menu bar, call the AddBar method of the bar object returned by AddBar. For example, in the code below, the "New Items" button has a menu with four bars: "E-mail Message", "Appointment", a separator, and "E-mail Message Using", the latter of which has a submenu with "More Stationery...", a separator, "Plain Text", "Rich Text", and "HTML" bars.
@@ -113,14 +119,14 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
 * The ribbon can also have a dropdown menu, displayed by right-clicking the part of the ribbon that isn't covered with buttons. To add bars to the ribbon's menu, call the AddBar method of the ribbon using the same parameters discussed above. Submenus are also supported in the same way as discussed above.
 
     ```foxpro
-	Thisform.oRibbon.AddBar('Change Theme to Colorful', ;
+	Thisform.oRibbon.AddBar('Colorful', ;
 	    "Thisform.oRibbon.Theme = 'Colorful'" + chr(13) + ;
-	        "Thisform.Refresh()", , ;
-	    "Thisform.oRibbon.Theme <> 'Colorful'")
-	Thisform.oRibbon.AddBar('Change Theme to Dark Grey', ;
+	        "Thisform.Refresh()", ;
+	    "{iif(Thisform.oRibbon.Theme = 'Colorful', 'check.bmp', '')}")
+	Thisform.oRibbon.AddBar('Dark Grey', ;
 	    "Thisform.oRibbon.Theme = 'Dark Grey'" + chr(13) + ;
-	        "Thisform.Refresh()", , ;
-	    "Thisform.oRibbon.Theme <> 'Dark Grey'")
+	        "Thisform.Refresh()", ;
+	    "{iif(Thisform.oRibbon.Theme = 'Colorful', '', 'check.bmp')}")
 	```
 
 * You can add other types of controls besides buttons to a section: call AddControl, passing the name (optional), class, and library for the control. Be sure to call CalculateWidth for the section so the width of the section is adjusted accordingly. For example, this code adds a textbox:
@@ -160,6 +166,51 @@ A ribbon has the following behavior:
 * Clicking a bar executes the command for that bar. If no command was specified and there is no submenu for the bar (see the next point), a messagebox with "Not implemented" appears.
 
 * A right arrow appears in the caption for a bar if it has a submenu. Submenus behave just like menus.
+
+* The ribbon can be hidden if desired; see the "Hiding the ribbon" section.
+
+## Hiding the ribbon
+
+If the AllowShowTabsOnly property of the ribbon is .T., a button appears at the right edge of the ribbon with a dropdown menu showing two choices: *Show tabs only* and *Always show ribbon*.
+
+![](docs/displaybutton.png)
+
+If you choose *Show tabs only*, the ribbon hides and only tabs are displayed.
+
+![](docs/showtabsonly.png)
+
+Clicking a tab temporarily displays the ribbon; clicking a button or anywhere outside the ribbon hides it again.
+
+Choose *Always show ribbon* to display the ribbon again.
+
+You should move the controls displayed in the form when the ribbon is hidden or reshown. To do that, bind to the ribbon's OnShowTabsOnly event. That event is passed .T. to hide the ribbon or .F. to redisplay it.
+
+Here's an example taken from the sample form. This code is in Init:
+
+```foxpro
+bindevent(This.oRibbon, 'OnShowTabsOnly', This, 'ShowTabsOnly')
+```
+
+The ShowTabsOnly method of the form has this code:
+
+```foxpro
+lparameters tlShowTabsOnly
+if tlShowTabsOnly
+    This.lblTheme.Top = 69
+    This.cboTheme.Top = 65
+else
+    This.lblTheme.Top = 169
+    This.cboTheme.Top = 165
+endif tlShowTabsOnly
+```
+
+Rather than hard-coding values, you could set the Top of each control relative to the ribbon's Height.
+
+Tip: It's easier to move the controls if all of the controls are in a container; you just then set the Top property of the container.
+
+To localize the menu choices, override the GetLocalizedString method of the ribbon control, accept a string parameter (which will be either "Show tabs only" or "Always show ribbon"), and return the desired string.
+
+To programmatically hide or redisplay the ribbon, set the DisplayTabsOnly property to .T. (hide) or .F. (display).
 
 ## Themes
 
@@ -263,6 +314,12 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 * SFRibbonMenuForm: a form class that provides a dropdown menu; a subclass of Form.
 
 ## Updates
+
+### 2022-04-06
+
+* Added a Ribbon Display button to the right side of the ribbon with choices of Show Tabs Only and Always Show Ribbon and added support for hiding the ribbon. This requires adding two new images to your project: SFRibbonCheck.png and SFRibbonDownLarge.png.
+
+* You can specify a dynamic image for a menu bar, one that's determined when the menu is displayed, by specifying an expression surrounded with curly braces for the third parameter in the AddBar call.
 
 ### 2021-07-23
 

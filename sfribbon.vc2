@@ -15,28 +15,44 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 	*< OBJECTDATA: ObjPath="Line3" UniqueID="" Timestamp="" />
 	*< OBJECTDATA: ObjPath="Line4" UniqueID="" Timestamp="" />
 	*< OBJECTDATA: ObjPath="Line5" UniqueID="" Timestamp="" />
+	*< OBJECTDATA: ObjPath="tmrClick" UniqueID="" Timestamp="" />
+	*< OBJECTDATA: ObjPath="RibbonDisplayButton" UniqueID="" Timestamp="" />
+	*< OBJECTDATA: ObjPath="RibbonDisplayButton.imgButton" UniqueID="" Timestamp="" />
 
 	*<DefinedPropArrayMethod>
 		*m: addtab		&& Adds a tab to the ribbon
 		*m: adjusttabs		&& Adjusts the tabs so they align properly
+		*m: allowshowtabsonly_assign
+		*m: getlocalizedstring		&& Gets a localized version of the specified string
 		*m: gettabs		&& Returns a collection of tabs
+		*m: onshowtabsonly		&& Event raised when lShowTabsOnly is changed
 		*m: selecttab		&& Fired when the specified tab is selected
+		*m: showtabsonly		&& Display only tabs or the full ribbon
 		*m: width_assign
+		*p: allowshowtabsonly		&& .T. to allow displaying only tabs
 		*p: cselectedtab		&& The name of the selected pad
+		*p: displaytabsonly		&& .T. if we're displaying tabs only
+		*p: lclickoutsidemenu		&& .T. if the user clicked outside a menu
+		*p: nfullheight		&& The normal height of the ribbon
 		*p: tabclass		&& The default tab class
 		*p: tablibrary		&& The default tab library
 		*p: themes		&& A collection of theme names
 	*</DefinedPropArrayMethod>
 
-	PROTECTED cselectedtab
+	PROTECTED cselectedtab,nfullheight
+	allowshowtabsonly = .F.		&& .T. to allow displaying only tabs
 	BackColor = 243,242,241
 	controltype = Tab
 	cselectedtab = 		&& The name of the selected pad
+	displaytabsonly = .F.		&& .T. if we're displaying tabs only
 	Height = 130
+	lclickoutsidemenu = .F.		&& .T. if the user clicked outside a menu
 	Name = "sfribbon"
+	nfullheight = 0		&& The normal height of the ribbon
 	tabclass = SFRibbonTab		&& The default tab class
 	tablibrary = SFRibbon.vcx		&& The default tab library
 	themes = NULL		&& A collection of theme names
+	type = Ribbon
 	Width = 450
 	_memberdata = <VFPData>
 		<memberdata name="shortcutmenu" display="ShortcutMenu"/>
@@ -52,6 +68,14 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="themes" display="Themes"/>
 		<memberdata name="width" display="Width"/>
 		<memberdata name="width_assign" display="Width_Assign"/>
+		<memberdata name="showtabsonly" display="ShowTabsOnly"/>
+		<memberdata name="nfullheight" display="nFullHeight"/>
+		<memberdata name="onshowtabsonly" display="OnShowTabsOnly"/>
+		<memberdata name="getlocalizedstring" display="GetLocalizedString"/>
+		<memberdata name="allowshowtabsonly" display="AllowShowTabsOnly"/>
+		<memberdata name="allowshowtabsonly_assign" display="AllowShowTabsOnly_Assign"/>
+		<memberdata name="displaytabsonly" display="DisplayTabsOnly"/>
+		<memberdata name="lclickoutsidemenu" display="lClickOutsideMenu"/>
 		</VFPData>
 
 	ADD OBJECT 'linBottom' AS line WITH ;
@@ -107,6 +131,32 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		Top = 130, ;
 		Width = 450
 		*< END OBJECT: BaseClass="line" />
+
+	ADD OBJECT 'RibbonDisplayButton' AS sfribbonbase WITH ;
+		BackStyle = 0, ;
+		Height = 16, ;
+		Left = 430, ;
+		Name = "RibbonDisplayButton", ;
+		Top = 105, ;
+		Width = 16
+		*< END OBJECT: ClassLib="sfribbon.vcx" BaseClass="container" />
+
+	ADD OBJECT 'RibbonDisplayButton.imgButton' AS image WITH ;
+		Height = 16, ;
+		Name = "imgButton", ;
+		Picture = sfribbondownlarge.png, ;
+		Width = 16
+		*< END OBJECT: BaseClass="image" />
+
+	ADD OBJECT 'tmrClick' AS timer WITH ;
+		Enabled = .F., ;
+		Height = 23, ;
+		Interval = 30, ;
+		Left = 68, ;
+		Name = "tmrClick", ;
+		Top = 18, ;
+		Width = 23
+		*< END OBJECT: BaseClass="timer" />
 	
 	PROCEDURE addtab		&& Adds a tab to the ribbon
 		*==============================================================================
@@ -175,11 +225,37 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		
 	ENDPROC
 
+	PROCEDURE allowshowtabsonly_assign
+		lparameters tlAllowShowTabsOnly
+		This.AllowShowTabsOnly = tlAllowShowTabsOnly
+		This.RibbonDisplayButton.Visible = tlAllowShowTabsOnly
+		
+	ENDPROC
+
 	PROCEDURE Destroy
 		* Nuke member objects.
 		
 		dodefault()
 		This.Themes = NULL
+		
+	ENDPROC
+
+	PROCEDURE getlocalizedstring		&& Gets a localized version of the specified string
+		*==============================================================================
+		* Method:			GetLocalizedString
+		* Status:			Public
+		* Purpose:			Gets a localized version of the specified string
+		* Author:			Doug Hennig
+		* Last Revision:	04/03/2022
+		* Parameters:		tcString - the string to localize
+		* Returns:			the localized version of the string
+		* Environment in:	none
+		* Environment out:	none
+		* Note:				override this in a subclass as needed
+		*==============================================================================
+		
+		lparameters tcString
+		return tcString
 		
 	ENDPROC
 
@@ -210,7 +286,8 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 
 	PROCEDURE Init
 		local lnI, ;
-			lcTheme
+			lcTheme, ;
+			lcRibbon
 		
 		* Match our width to the form.
 		
@@ -230,6 +307,36 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 			next lnI
 		endif empty(This.cThemes)
 		
+		* Place the RibbonDisplayButton at the far right and add a menu to show tabs
+		* only or the full ribbon.
+		
+		This.RibbonDisplayButton.Left    = This.Width - 20
+		This.RibbonDisplayButton.Visible = This.AllowShowTabsOnly
+		lcRibbon = 'Thisform.' + This.Name + '.'
+		This.RibbonDisplayButton.AddBar(This.GetLocalizedString('Show tabs only'), ;
+			lcRibbon + 'ShowTabsOnly(.T.)', ;
+			"{iif(" + lcRibbon + "DisplayTabsOnly, 'sfribboncheck.png', '')}")
+		This.RibbonDisplayButton.AddBar(This.GetLocalizedString('Always show ribbon'), ;
+			lcRibbon + 'ShowTabsOnly()', ;
+			"{iif(" + lcRibbon + "DisplayTabsOnly, '', 'sfribboncheck.png')}")
+		This.nFullHeight = This.Height
+		
+		* Move to the top of ZOrder so when we redisplay when showing tabs only, we're
+		* on top of everything else.
+		
+		This.ZOrder(0)
+		
+		* Declare the Sleep function.
+		
+		declare Sleep in Win32API integer nMilliseconds
+		
+	ENDPROC
+
+	PROCEDURE onshowtabsonly		&& Event raised when lShowTabsOnly is changed
+		* Event method
+		
+		lparameters tlShowTabsOnly
+		
 	ENDPROC
 
 	PROCEDURE selecttab		&& Fired when the specified tab is selected
@@ -238,7 +345,7 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		* Status:			Public
 		* Purpose:			Fired when the specified tab is selected
 		* Author:			Doug Hennig
-		* Last revision:	12/26/2020
+		* Last revision:	04/02/2022
 		* Parameters:		toTab - the reference to the selected tab
 		* Returns:			.T.
 		* Environment in:	cSelectedTab contains the name of the formerly selected tab
@@ -284,6 +391,87 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		endif not empty(lcOldTab)
 		This.cSelectedTab = toTab.Name
 		
+		* If we're displaying tabs only, expand the ribbon to show the toolbar and
+		* start the timer that checks if the user clicks outside the ribbon.
+		
+		if This.DisplayTabsOnly
+			This.ShowTabsOnly(.F., .T.)
+			This.tmrClick.Enabled = .T.
+		endif This.DisplayTabsOnly
+		
+	ENDPROC
+
+	PROCEDURE showmenu
+		lparameters tnRow, ;
+			tnCol, ;
+			tcName
+		dodefault(tnRow, tnCol, 'nothing')
+		
+	ENDPROC
+
+	PROCEDURE showtabsonly		&& Display only tabs or the full ribbon
+		*==============================================================================
+		* Method:			ShowTabsOnly
+		* Status:			Public
+		* Purpose:			Display only tabs or the full ribbon
+		* Author:			Doug Hennig
+		* Last Revision:	04/06/2022
+		* Parameters:		tlShowTabsOnly - .T. to show tabs only
+		*					tlDisplayOnly  - .T. if we're being called to update the
+		*						display only
+		* Returns:			none
+		* Environment in:	cSelectedTab contains the name of the selected tab
+		*					nFullHeight contains the normal height of the ribbon
+		* Environment out:	the ribbon height and position of the lines has been
+		*						adjusted and the toolbar for the selected tab has been
+		*						displayed or hidden
+		*					the OnShowTabsOnly event is raised
+		*==============================================================================
+		
+		lparameters tlShowTabsOnly, ;
+			tlDisplayOnly
+		local lcTab
+		
+		* Save the setting if we're not just being called to update the display. If we
+		* are just updated, pause for a bit: needed for multiple timer firing to not
+		* conflict.
+		
+		if not tlDisplayOnly
+			This.DisplayTabsOnly = tlShowTabsOnly
+		else
+			Sleep(100)
+		endif not tlDisplayOnly
+		
+		* If we're showing tabs only, set the ribbon height to slightly taller than the
+		* tabs. Otherwise, set it to the normal height.
+		
+		lcTab = This.cSelectedTab
+		if tlShowTabsOnly
+			This.Height           = This.&lcTab..Height + 8
+			This.tmrClick.Enabled = .F.
+		else
+			This.Height = This.nFullHeight
+		endif tlShowTabsOnly
+		
+		* Move the lines to the bottom of the ribbon.
+		
+		This.linBottom.Top = This.Height - 5
+		This.line1.Top     = This.Height - 4
+		This.line2.Top     = This.Height - 3
+		This.line3.Top     = This.Height - 2
+		This.line4.Top     = This.Height - 1
+		This.line5.Top     = This.Height
+		
+		* Show or hide the selected tab's toolbar.
+		
+		This.&lcTab..Toolbar.Visible = not tlShowTabsOnly
+		
+		* Raise the OnShowTabsOnly event so the form can do something about it.
+		
+		if not tlDisplayOnly
+			raiseevent(This, 'OnShowTabsOnly', tlShowTabsOnly)
+		endif not tlDisplayOnly
+		
 	ENDPROC
 
 	PROCEDURE theme_assign
@@ -306,6 +494,53 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		This.Width = tnWidth
 		store tnWidth to This.linBottom.Width, This.Line1.Width, This.Line2.Width, ;
 			This.Line3.Width, This.Line4.Width, This.Line5.Width
+		This.RibbonDisplayButton.Left = tnWidth - 20
+		
+	ENDPROC
+
+	PROCEDURE RibbonDisplayButton.imgButton.Click
+		This.Parent.ShowMenu()
+		
+	ENDPROC
+
+	PROCEDURE RibbonDisplayButton.MouseEnter
+		lparameters tnButton, ;
+			tnShift, ;
+			tnXCoord, ;
+			tnYCoord
+		This.imgButton.BorderStyle = 1
+		
+	ENDPROC
+
+	PROCEDURE RibbonDisplayButton.MouseLeave
+		lparameters tnButton, ;
+			tnShift, ;
+			tnXCoord, ;
+			tnYCoord
+		This.imgButton.BorderStyle = 0
+		
+	ENDPROC
+
+	PROCEDURE tmrClick.Timer
+		* If the user clicks outside the ribbon when we're showing tabs only, redisplay
+		* tabs only.
+		
+		local llDown, ;
+			laMouse[1], ;
+			lnMouse, ;
+			llClickOutsideRibbon
+		#define VK_LBUTTON 0x01
+		declare integer GetAsyncKeyState in user32 integer vKey
+		llDown               = GetAsyncKeyState(VK_LBUTTON) > 0 or mdown()
+			&& use GetAsyncKeyState because MDOWN() is .F. if click outside form
+		lnMouse              = amouseobj(laMouse, 1)
+		llClickOutsideRibbon = llDown and (lnMouse = 0 or ;
+			not between(laMouse[3], This.Parent.Left, This.Parent.Left + This.Parent.Width) or ;
+			not between(laMouse[4], This.Parent.Top, This.Parent.Top + This.Parent.Height))
+		if llClickOutsideRibbon
+			This.Parent.ShowTabsOnly(.T., .T.)
+			This.Enabled = .F.
+		endif llClickOutsideRibbon
 		
 	ENDPROC
 
@@ -326,7 +561,6 @@ DEFINE CLASS sfribbonbase AS container
 		*p: controltype		&& The type of control this contains
 		*p: cthemecolors		&& The colors for the current theme
 		*p: cthemes		&& The XML defining the themes
-		*p: menu		&& A reference to an SFRibbonMenu object
 		*p: ogdi		&& A reference to an SFGDIMeasureString object
 		*p: padding		&& The space between the left edge and the first control
 		*p: theme		&& The theme to use
@@ -341,7 +575,6 @@ DEFINE CLASS sfribbonbase AS container
 	cthemes = 		&& The XML defining the themes
 	Enabled = .T.
 	Height = 65
-	menu = .NULL.		&& A reference to an SFRibbonMenu object
 	Name = "sfribbonbase"
 	ogdi = .NULL.		&& A reference to an SFGDIMeasureString object
 	padding = 0		&& The space between the left edge and the first control
@@ -356,7 +589,6 @@ DEFINE CLASS sfribbonbase AS container
 		<memberdata name="getcolor" display="GetColor"/>
 		<memberdata name="padding_assign" display="Padding_Assign"/>
 		<memberdata name="type" display="Type"/>
-		<memberdata name="menu" display="Menu"/>
 		<memberdata name="enabled" display="Enabled"/>
 		<memberdata name="enabled_assign" display="Enabled_Assign"/>
 		<memberdata name="theme" display="Theme"/>
@@ -400,7 +632,7 @@ DEFINE CLASS sfribbonbase AS container
 		* Status:			Protected
 		* Purpose:			Adds a control to the container
 		* Author:			Doug Hennig
-		* Last Revision:	12/22/2020
+		* Last Revision:	04/03/2022
 		* Parameters:		tcName    - the name of the control
 		*					tcClass   - the class for the control
 		*					tcLibrary - the library for the control
@@ -413,14 +645,17 @@ DEFINE CLASS sfribbonbase AS container
 			tcClass, ;
 			tcLibrary
 		local lnLeft, ;
+			lnControls, ;
 			loControl
 		
 		* Figure out what position to use.
 		
-		lnLeft = 0
+		lnLeft     = 0
+		lnControls = 0
 		for each loControl in This.Controls foxobject
 			if pemstatus(loControl, 'Type', 5) and loControl.Type = This.ControlType
-				lnLeft = max(lnLeft, loControl.Left + loControl.Width)
+				lnControls = lnControls + 1
+				lnLeft     = max(lnLeft, loControl.Left + loControl.Width)
 			endif pemstatus(loControl, 'Type', 5) ...
 		next loControl
 		
@@ -429,7 +664,7 @@ DEFINE CLASS sfribbonbase AS container
 		This.NewObject(tcName, tcClass, tcLibrary)
 		loControl = This.&tcName
 		with loControl
-			.Left    = max(lnLeft, This.Padding)
+			.Left    = max(lnLeft, iif(lnControls = 0, 0, This.Padding))
 			.Visible = .T.
 		endwith
 		return loControl
@@ -439,7 +674,6 @@ DEFINE CLASS sfribbonbase AS container
 	PROCEDURE Destroy
 		* Nuke member objects.
 		
-		This.Menu  = NULL
 		This.oGDI  = NULL
 		loThisform = NULL
 		
@@ -511,9 +745,9 @@ DEFINE CLASS sfribbonbase AS container
 		
 		This.oGDI = newobject('SFGDIMeasureString', 'SFGDIMeasureString.prg')
 		
-		* Instantiate an SFRibbonMenu object.
+		* Create an SFRibbonMenu object.
 		
-		This.Menu = newobject('SFRibbonMenu', 'SFRibbon.vcx')
+		This.NewObject('Menu', 'SFRibbonMenu', 'SFRibbon.vcx')
 		
 		* Read in the theme colors.
 		
@@ -543,20 +777,24 @@ DEFINE CLASS sfribbonbase AS container
 		* Status:			Public
 		* Purpose:			Displays a shortcut menu
 		* Author:			Doug Hennig
-		* Last revision:	01/06/2021
-		* Parameters:		tnRow - the row for the menu (optional: if it isn't
+		* Last revision:	04/05/2022
+		* Parameters:		tnRow  - the row for the menu (optional: if it isn't
 		*						specified, the mouse position is used)
-		*					tnCol - the column for the menu (optional: if it isn't
+		*					tnCol  - the column for the menu (optional: if it isn't
 		*						specified, the mouse position is used)
+		*					tcName - the name of the object that fired the menu
+		*						(optional: if it isn't passed, This.Name is used)
 		* Returns:			.T.
 		* Environment in:	This.Menu contains a reference to the menu
 		* Environment out:	a menu was displayed if it has any bars
 		*==============================================================================
 		
 		lparameters tnRow, ;
-			tnCol
+			tnCol, ;
+			tcName
 		local lnRow, ;
-			lnCol
+			lnCol, ;
+			lcName
 		
 		* If the menu is visible, close it.
 		
@@ -576,19 +814,20 @@ DEFINE CLASS sfribbonbase AS container
 		
 		* Get the row and column to use.
 		
-		if pcount() = 0
+		if vartype(tnRow) <> 'N'
 			lnRow = mrow(0, 3) + Thisform.Top + sysmetric(9) + sysmetric(4) + ;
 				iif(_screen.Visible, sysmetric(9) + sysmetric(20), 0)
 			lnCol = mcol(0, 3) + Thisform.Left + sysmetric(3)
 		else
 			lnRow = tnRow
 			lnCol = tnCol
-		endif pcount() = 0
+		endif vartype(tnRow) <> 'N'
 		
 		* Display the menu if there are any bars.
 		
 		if This.Menu.Count > 0
-			This.Menu.ShowMenu(lnRow, lnCol, This.Name)
+			lcName = evl(tcName, This.Name)
+			This.Menu.ShowMenu(lnRow, lnCol, lcName)
 		endif This.Menu.Count > 0
 		
 	ENDPROC
@@ -654,10 +893,12 @@ DEFINE CLASS sfribbonmenu AS custom
 		* Status:			Public
 		* Purpose:			Adds a bar to the menu
 		* Author:			Doug Hennig
-		* Last Revision:	12/27/2020
+		* Last Revision:	04/03/2022
 		* Parameters:		tcPrompt  - the prompt for the bar
 		*					tcCommand - the command to execute
-		*					tcImage   - the image for the bar
+		*					tcImage   - the image for the bar; if it's surrounded with
+		*						curly braces, it's an expression evaluated when the
+		*						menu is dispplayed
 		*					tcEnabled - the expression that enables the bar (optional)
 		* Returns:			a reference to the new bar
 		* Environment in:	none
@@ -700,10 +941,11 @@ DEFINE CLASS sfribbonmenu AS custom
 		* For some reason, Image_Assign is protected so do what that method does.
 		*		.Image   = evl(tcImage, '')
 				lcImage  = evl(tcImage, '')
-				.imgButton.Picture = lcImage
-				if not empty(lcImage) and file(lcImage)
-					.imgButton.Visible = .T.
-				endif not empty(lcImage) ...
+				if left(lcImage, 1) = '{'
+					.cImageExpression = substr(lcImage, 2, len(lcImage) - 2)
+				else
+					.imgButton.Picture = lcImage
+				endif left(lcImage, 1) = '{'
 				.EnabledExpression = strtran(evl(tcEnabled, ''), 'Thisform', ;
 					'loThisform', -1, -1, 1)
 					&& same reason to replace Thisform as above
@@ -755,6 +997,7 @@ DEFINE CLASS sfribbonmenu AS custom
 		
 		if vartype(This.oForm) = 'O'
 			This.oForm.Hide()
+			This.oForm.oRibbon = NULL
 		endif vartype(This.oForm) = 'O'
 		
 	ENDPROC
@@ -765,7 +1008,7 @@ DEFINE CLASS sfribbonmenu AS custom
 		* Status:			Public
 		* Purpose:			Displays the menu
 		* Author:			Doug Hennig
-		* Last Revision:	01/06/2021
+		* Last Revision:	04/05/2022
 		* Parameters:		tnRow  - the row for the menu
 		*					tnCol  - the column for the menu
 		*					tcName - the name of the object with the menu
@@ -784,7 +1027,8 @@ DEFINE CLASS sfribbonmenu AS custom
 			lnTop, ;
 			lnWidth, ;
 			lnI, ;
-			lcName
+			lcName, ;
+			loObject
 		
 		* Set the position and theme for each bar and get the maximum width.
 		
@@ -799,12 +1043,33 @@ DEFINE CLASS sfribbonmenu AS custom
 				.Theme  = This.Theme
 				lnTop   = lnTop + .Height
 				lnWidth = max(lnWidth, .Width)
-				if .Type <> 'Separator' and not empty(.EnabledExpression)
-					.Enabled = evaluate(.EnabledExpression)
-				endif .Type <> 'Separator' ...
 				if lnI = 1
 					loForm.BackColor = .BackColor
 				endif lnI = 1
+				if .Type <> 'Separator'
+		
+		* If we have an enabled expression, use it.
+		
+					if not empty(.EnabledExpression)
+						try
+							.Enabled = evaluate(.EnabledExpression)
+						catch
+						endtry
+					endif not empty(.EnabledExpression)
+		
+		* If we have an image expression, use it.
+		
+					if not empty(.cImageExpression)
+						try
+							lcImage = evaluate(.cImageExpression)
+						catch
+							lcImage = ''
+						endtry
+						.imgButton.Picture = lcImage
+					endif not empty(.cImageExpression)
+					.imgButton.Visible = not empty(.imgButton.Picture) and ;
+						file(.imgButton.Picture)
+				endif .Type <> 'Separator' ...
 			endwith
 		next lnI
 		
@@ -818,9 +1083,33 @@ DEFINE CLASS sfribbonmenu AS custom
 			.Height     = lnTop   + This.Padding
 			.Width      = lnWidth + This.Padding * 2
 			.Top        = tnRow
-			.Left       = tnCol
 			.ObjectName = tcName
+		
+		* Adjust the menu position if it's outside the form (unless it's the menu form,
+		* meaning this is a submenu).
+		
+			if tnCol + .Width > Thisform.Left + Thisform.Width and ;
+				lower(Thisform.Class) <> 'sfribbonmenuform'
+				.Left = Thisform.Width - .Width
+			else
+				.Left = tnCol
+			endif tnCol + .Width ...
 		endwith
+		
+		* Find the ribbon and set a reference to it in the form.
+		
+		loObject = This.Parent
+		if lower(loObject.Parent.Class) = 'sfribbonmenuform'
+			loObject = loObject.Parent.oRibbon
+		else
+			do while pemstatus(loObject, 'Type', 5) and loObject.Type <> 'Ribbon'
+				loObject = loObject.Parent
+			enddo while pemstatus(loObject, 'Type', 5) ...
+		endif lower(loObject.Parent.Class) = 'sfribbonmenuform'
+		loForm.oRibbon = loObject
+		
+		* Show the menu.
+		
 		loForm.Show()
 		
 	ENDPROC
@@ -835,10 +1124,16 @@ ENDDEFINE
 DEFINE CLASS sfribbonmenubar AS sfribbontoolbarbuttonhorizontal OF "sfribbon.vcx" 
  	*< CLASSDATA: Baseclass="container" Timestamp="" Scale="Pixels" Uniqueid="" />
 
+	*<DefinedPropArrayMethod>
+		*p: cimageexpression		&& The expression to use for the image at runtime
+	*</DefinedPropArrayMethod>
+
 	BackColor = 255,255,255
+	cimageexpression = 		&& The expression to use for the image at runtime
 	Name = "sfribbonmenubar"
 	_memberdata = <VFPData>
 		<memberdata name="enabledexpression" display="EnabledExpression"/>
+		<memberdata name="cimageexpression" display="cImageExpression"/>
 		</VFPData>
 	imgButton.Name = "imgButton"
 	imgButton.Top = 5
@@ -892,7 +1187,7 @@ DEFINE CLASS sfribbonmenubar AS sfribbontoolbarbuttonhorizontal OF "sfribbon.vcx
 		
 	ENDPROC
 
-	PROCEDURE showmenu		&& Displays the menu
+	PROCEDURE showmenu
 		* Display the submenu beside ourselves.
 		
 		if not This.Menu.Visible
@@ -922,6 +1217,7 @@ DEFINE CLASS sfribbonmenuform AS form
 	*<DefinedPropArrayMethod>
 		*m: calculatewidth		&& Calculate the width
 		*p: objectname		&& The name of the object that has the menu
+		*p: oribbon		&& A reference to the ribbon
 		*p: _memberdata		&& XML Metadata for customizable properties
 	*</DefinedPropArrayMethod>
 
@@ -936,6 +1232,7 @@ DEFINE CLASS sfribbonmenuform AS form
 	Left = 0
 	Name = "sfribbonmenuform"
 	objectname = 		&& The name of the object that has the menu
+	oribbon = .NULL.		&& A reference to the ribbon
 	ShowWindow = 2
 	TitleBar = 0
 	Top = 0
@@ -943,6 +1240,7 @@ DEFINE CLASS sfribbonmenuform AS form
 	_memberdata = <VFPData>
 		<memberdata name="calculatewidth" display="CalculateWidth"/>
 		<memberdata name="objectname" display="ObjectName"/>
+		<memberdata name="oribbon" display="oRibbon"/>
 		</VFPData>		&& XML Metadata for customizable properties
 
 	ADD OBJECT 'shpBorder' AS shape WITH ;
@@ -970,10 +1268,16 @@ DEFINE CLASS sfribbonmenuform AS form
 		
 	ENDPROC
 
+	PROCEDURE Destroy
+		This.oRibbon = NULL
+		
+	ENDPROC
+
 	PROCEDURE Hide
-		* Disable the timer.
+		* Disable the timer and nuke the reference to the ribbon.
 		
 		This.tmrClick.Enabled = .F.
+		This.oRibbon          = NULL
 		
 	ENDPROC
 
@@ -998,6 +1302,13 @@ DEFINE CLASS sfribbonmenuform AS form
 	PROCEDURE Show
 		lparameters tnStyle
 		
+		* If we have a reference to the ribbon, flag that the user hasn't clicked
+		* outside the menu yet.
+		
+		if vartype(This.oRibbon) = 'O'
+			This.oRibbon.lClickOutsideMenu = .F.
+		endif vartype(This.oRibbon) = 'O'
+		
 		* Enable the timer that looks for mouse clicks.
 		
 		This.tmrClick.Enabled = .T.
@@ -1010,32 +1321,50 @@ DEFINE CLASS sfribbonmenuform AS form
 	ENDPROC
 
 	PROCEDURE tmrClick.Timer
-		* If the user clicks outside the menu or moves the mouse outside the form,
-		* close the menu.
+		* If the user clicks outside the menu, close the menu.
 		
 		local llDown, ;
 			laMouse[1], ;
 			lnMouse, ;
-			llMouseOutsideForm, ;
 			lcObjectName, ;
-			llClickOutsideMenu
+			llClickOutsideMenu, ;
+			llHaveRibbon
 		#define VK_LBUTTON 0x01
 		declare integer GetAsyncKeyState in user32 integer vKey
 		llDown             = GetAsyncKeyState(VK_LBUTTON) > 0 or mdown()
 			&& use GetAsyncKeyState because MDOWN() is .F. if click outside form
 		lnMouse            = amouseobj(laMouse, 1)
-		llMouseOutsideForm = lnMouse > 0 and laMouse[2].Name = 'Screen'
-		lcObjectName       = iif(lnMouse > 0 and ;
+		lcObjectName       = icase(lnMouse = 0, '', ;
 			type('laMouse[1].Parent.Type') = 'C' and 'Button' $ laMouse[1].Parent.Type, ;
 			laMouse[1].Parent.Name, laMouse[1].Name)
 			&& if the user clicks a member of the button, use the button name
 		llClickOutsideMenu = llDown and (lnMouse = 0 or (laMouse[2] <> Thisform and ;
-			lcObjectName <> Thisform.ObjectName))
-		if llMouseOutsideForm or llClickOutsideMenu
-			This.Enabled        = .F.
-			This.Parent.Visible = .F.
+			not lcObjectName == Thisform.ObjectName))
+		
+		* If the user clicked outside this menu or another menu (this may be a parent
+		* or a submenu), flag that so other menus know about it, hide the ribbon if
+		* we're supposed to, and hide the menu.
+		
+		llHaveRibbon       = vartype(Thisform.oRibbon) = 'O'
+		llClickOutsideMenu = llClickOutsideMenu or ;
+			(llHaveRibbon and Thisform.oRibbon.lClickOutsideMenu)
+		* Note: this code is left here in case we need to debug
+		*debugout 'Down: ' + transform(llDown) + chr(13) + ;
+			' Mouse: ' + transform(lnMouse) + chr(13) + ;
+			iif(lnMouse = 0, '', ' Form: ' + laMouse[2].Name + chr(13)) + ;
+			' Object: ' + lcObjectName + chr(13) + ;
+			'This object: ' + Thisform.ObjectName + chr(13) + ;
+			' Clickoutside: ' + transform(llClickOutsideMenu)
+		if llClickOutsideMenu
+			if llHaveRibbon
+				Thisform.oRibbon.lClickOutsideMenu = .T.
+				if Thisform.oRibbon.DisplayTabsOnly
+					Thisform.oRibbon.ShowTabsOnly(.T., .T.)
+				endif Thisform.oRibbon.DisplayTabsOnly
+			endif llHaveRibbon
+			This.Parent.Hide()
 			release loThisform
-		endif mdown() ...
+		endif llClickOutsideMenu
 		
 	ENDPROC
 
@@ -1229,6 +1558,7 @@ DEFINE CLASS sfribbontab AS sfribbonbase OF "sfribbon.vcx"
 	PROCEDURE Destroy
 		* Nuke member objects.
 		
+		dodefault()
 		This.Toolbar = NULL
 		
 	ENDPROC
@@ -1442,7 +1772,7 @@ DEFINE CLASS sfribbontoolbar AS sfribbonbase OF "sfribbon.vcx"
 		* Purpose:			Adjusts the location of sections when the width of one
 		*						changes
 		* Author:			Doug Hennig
-		* Last Revision:	02/11/2021
+		* Last Revision:	04/03/2022
 		* Parameters:		none
 		* Returns:			none
 		* Environment in:	the toolbar contains sections
@@ -1454,8 +1784,10 @@ DEFINE CLASS sfribbontoolbar AS sfribbonbase OF "sfribbon.vcx"
 			loControl
 		lnLeft = 0
 		for each loControl in This.Controls foxobject
-			loControl.Left = lnLeft
-			lnLeft = loControl.Left + loControl.Width
+			if lower(loControl.Class) <> 'sfribbonmenu'
+				loControl.Left = lnLeft
+				lnLeft = loControl.Left + loControl.Width
+			endif lower(loControl.Class) <> 'sfribbonmenu'
 		next loControl
 		This.Width = lnLeft + 1
 		
@@ -1661,11 +1993,23 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	ENDPROC
 
 	PROCEDURE Click
+		local lcCommand
+		
+		* If we're displaying tabs only, collapse the ribbon again if we're not
+		* displaying a menu.
+		
+		try
+			if This.Parent.Parent.Parent.DisplayTabsOnly and ;
+				(not empty(This.Command) or This.Menu.Count = 0)
+				This.Parent.Parent.Parent.ShowTabsOnly(.T., .T.)
+			endif This.Parent.Parent.Parent.DisplayTabsOnly ...
+		catch
+		endtry
+		
 		* Execute the command if we have one or display the menu if not. Note that
 		* references to Thisform have to be changed to an object reference because
 		* EXECSCRIPT executes outside the object mechanism.
 		
-		local lcCommand
 		do case
 			case not empty(This.Command)
 				lcCommand  = This.Command
@@ -1749,7 +2093,9 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 			tnShift, ;
 			tnXCoord, ;
 			tnYCoord
-		This.BackColor = This.nBackColor
+		if This.BackColor <> This.nBackColor
+			This.BackColor = This.nBackColor
+		endif This.BackColor <> This.nBackColor
 		
 	ENDPROC
 
