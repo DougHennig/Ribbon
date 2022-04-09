@@ -313,7 +313,11 @@ All of the classes for the ribbon components are in SFRibbon.vcx.
 
 * SFRibbonMenuForm: a form class that provides a dropdown menu; a subclass of Form.
 
-## Updates
+## Helping with this project
+
+See [How to contribute to Ribbon](.github/CONTRIBUTING.md) for details on how to help with this project.
+
+## Releases
 
 ### 2022-04-06
 
