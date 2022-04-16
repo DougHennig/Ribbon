@@ -319,6 +319,10 @@ See [How to contribute to Ribbon](.github/CONTRIBUTING.md) for details on how to
 
 ## Releases
 
+### 2022-04-16
+
+* Added support for more than three consecutive horizontal buttons.
+
 ### 2022-04-06
 
 * Added a Ribbon Display button to the right side of the ribbon with choices of Show Tabs Only and Always Show Ribbon and added support for hiding the ribbon. This requires adding two new images to your project: SFRibbonCheck.png and SFRibbonDownLarge.png.
