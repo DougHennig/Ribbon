@@ -92,7 +92,8 @@ DEFINE CLASS form1 AS form
 		*< END OBJECT: ClassLib="..\sfribbon.vcx" BaseClass="container" />
 	
 	PROCEDURE Init
-		lcImagePath = addbs(justpath(getwordnum(sys(16), 3)))
+		lcImagePath = sys(16)
+		lcImagePath = addbs(justpath(substr(lcImagePath, at(' ', lcImagePath, 2) + 1)))
 		with This.oRibbon
 		
 		* Display the RibbonDisplay button.
