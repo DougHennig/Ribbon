@@ -1961,6 +1961,9 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 			This.lblButton.Width = This.Width - 2 * This.lblButton.Left
 			This.imgButton.Left  = int((This.Width - This.imgButton.Width) / 2)
 				&& center the image
+			This.imgDown.Left    = int((This.Width- This.imgDown.Width) / 2)
+			This.imgDown.Top     = This.lblButton.Top  + 24
+			This.nLines          = 1
 		else
 			if This.WordWrap
 				This.oGDI.SetSize(This.lblButton.Width, This.lblButton.Height)
@@ -1987,8 +1990,8 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 				This.imgDown.Top  = This.lblButton.Top  + This.lblButton.Height - 10
 			endif This.oGDI.nLines = 1
 			This.nLines = This.oGDI.nLines
-			This.Parent.CalculateWidth()
 		endif empty(This.Caption)
+		This.Parent.CalculateWidth()
 		
 	ENDPROC
 
