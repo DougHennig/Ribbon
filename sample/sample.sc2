@@ -196,6 +196,18 @@ DEFINE CLASS form1 AS form
 					endwith
 				endwith
 		
+		* Set up the Configurations section.
+		
+				loSection = .AddSection()
+				with loSection
+					.Caption = 'Configuration'
+					loButton = .AddButton()
+					with loButton
+						.Caption = ''
+						.Image   = lcImagePath + 'options.png'
+					endwith
+				endwith
+		
 		* Set up the Move section.
 		
 				loSection = .AddSection()

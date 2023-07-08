@@ -1,0 +1,58 @@
+# Ribbon
+
+This project provides a ribbon control similar to that of Microsoft Office 365 to VFP forms.
+
+## Release History
+
+### 2023-07-08
+
+* Fixed issue 12: button not centered when section label is wider than button
+* Fixed issue 13: button too wide when caption is empty
+
+### 2022-04-16
+
+* Added support for more than three consecutive horizontal buttons.
+
+### 2022-04-06
+
+* Added a Ribbon Display button to the right side of the ribbon with choices of Show Tabs Only and Always Show Ribbon and added support for hiding the ribbon. This requires adding two new images to your project: SFRibbonCheck.png and SFRibbonDownLarge.png.
+
+* You can specify a dynamic image for a menu bar, one that's determined when the menu is displayed, by specifying an expression surrounded with curly braces for the third parameter in the AddBar call.
+
+### 2021-07-23
+
+* Added DisabledImage property to SFRibbonToolbarButton.
+
+### 2021-02-11
+
+* Changing the Visible property of a button now adjusts the toolbar so buttons and sections are always beside each other with no space in between.
+
+### 2021-01-28
+
+* Added a WordWrap property to SFRibbonToolbarButton; setting it to .T. forces the caption to span multiple lines if necessary.
+
+* The width of the section's caption is now taken into account when determining the section's width.
+
+* Added a Clear method to SFRibbonMenu so you can remove all the items from an object's menu.
+
+* Fixed a bug: ensures the active control in a form has a Visible property before checking it (Visible may have been made protected in a subclass).
+
+### 2021-01-06
+
+* Added EnabledExpression to SFRibbonToolbarButton so you can define when a button is enabled without subclassing and putting code into Refresh.
+
+* Made dropdown menus close if the user clicks the button the menu belongs to again, clicks outside the menu, or moves the mouse outside the form.
+
+* Made changing the width of the ribbon programmatically set the width of the border and shadow lines properly.
+
+* Made SFRibbonToolbarButton.Click work with Command containing "Thisform", such as "Thisform.SomeMethod()".
+
+### 2020-12-29
+
+* Made dropdown menus release the public variable loThisform when they're closed and work when the ribbon is in a top-level form.
+
+* Changed Sample.scx to a top-level form.
+
+### 2020-12-28
+
+* Initial release.

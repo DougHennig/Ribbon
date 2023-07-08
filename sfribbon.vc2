@@ -1943,7 +1943,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		* Status:			Public
 		* Purpose:			Calculates the width of the button
 		* Author:			Doug Hennig
-		* Last Revision:	01/07/2021
+		* Last Revision:	07/08/2023
 		* Parameters:		none
 		* Returns:			none
 		* Environment in:	Padding contains the desired space
@@ -1954,14 +1954,21 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*==============================================================================
 		
 		local lnWidth
-		if not empty(This.Caption)
+		if empty(This.Caption)
+			lnWidth              = This.Width
+			This.Width           = This.imgButton.Width + (2 * This.Padding)
+			This.Left            = This.Left + int((lnWidth - This.Width)/2)
+			This.lblButton.Width = This.Width - 2 * This.lblButton.Left
+			This.imgButton.Left  = int((This.Width - This.imgButton.Width) / 2)
+				&& center the image
+		else
 			if This.WordWrap
 				This.oGDI.SetSize(This.lblButton.Width, This.lblButton.Height)
 			endif This.WordWrap
 			This.oGDI.MeasureString(This.lblButton.Caption)
 			lnWidth = max(ceiling(This.oGDI.nWidth) + 2 * This.lblButton.Left, ;
 				This.imgButton.Width + 2 * This.Padding)
-				&& use a width of the label or the image, whichever is wider
+				&& use the width of the label or the image, whichever is wider
 				&& This.lblButton.Width is inaccurate if the form isn't visible yet
 			if This.Width <> lnWidth and not This.WordWrap
 				This.Width = lnWidth
@@ -1981,7 +1988,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 			endif This.oGDI.nLines = 1
 			This.nLines = This.oGDI.nLines
 			This.Parent.CalculateWidth()
-		endif not empty(This.Caption)
+		endif empty(This.Caption)
 		
 	ENDPROC
 
@@ -2380,7 +2387,7 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 		* Status:			Public
 		* Purpose:			Calculates the width of the section
 		* Author:			Doug Hennig
-		* Last Revision:	04/16/2022
+		* Last Revision:	07/08/2023
 		* Parameters:		none
 		* Returns:			none
 		* Environment in:	none
@@ -2389,13 +2396,16 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 		*==============================================================================
 		
 		local lnWidth, ;
-			lcType, ;
+			lnControls, ;
 			loControl, ;
+			lcType, ;
 			llVertical, ;
 			lnLeft, ;
+			lnTop, ;
+			loUnique, ;
 			lnCaptionWidth
-		lnWidth   = 0
-		lnButtons = 1
+		lnWidth    = 0
+		lnControls = 0
 		for each loControl in This.Controls foxobject
 			lcType = iif(pemstatus(loControl, 'Type', 5), loControl.Type, '')
 			do case
@@ -2405,7 +2415,7 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 		
 				case inlist(loControl.Name, 'linSeparator', 'lblSection') or ;
 					(pemstatus(loControl, 'Visible', 5) and not loControl.Visible)
-					&& do nothing
+					loop
 		
 		* Horizontal button: if we already have enough buttons in this column, move to
 		* the next column. Set the Left property and if this isn't the first one, set
@@ -2434,11 +2444,20 @@ DEFINE CLASS sfribbontoolbarsection AS sfribbonbase OF "sfribbon.vcx"
 					lnWidth        = max(lnWidth, loControl.Left + loControl.Width)
 					llVertical     = .F.
 			endcase
+			lnControls = lnControls + 1
+			loUnique   = loControl
 		next loControl
 		lnCaptionWidth = This.oGDI.GetWidth(This.Caption)
 		This.linSeparator.Left = max(lnWidth, lnCaptionWidth) + This.Padding
 		store This.linSeparator.Left to This.Width, This.lblSection.Width
 		This.Parent.AdjustSections()
+		
+		* If we have a single control, center it in case the lower label width is
+		* bigger than the control width.
+		
+		if lnControls = 1
+			loUnique.Left = ceiling((This.Width - loUnique.Width) / 2)
+		endif lnControls = 1
 		
 	ENDPROC
 

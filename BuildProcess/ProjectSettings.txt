@@ -1,0 +1,7 @@
+AppName       = Ribbon
+AppID         = Ribbon
+Version       = 1.0
+Component     = Yes
+ChangeLog     = ChangeLog.md
+Repository    = https://github.com/DougHennig/Ribbon
+Bin2PRGFolder = .,sample
