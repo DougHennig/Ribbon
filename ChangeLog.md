@@ -7,7 +7,10 @@ This project provides a ribbon control similar to that of Microsoft Office 365 t
 ### 2023-07-08
 
 * Fixed issue 12: button not centered when section label is wider than button
+
 * Fixed issue 13: button too wide when caption is empty
+
+* Implemented [VFPX Deployment](https://github.com/VFPX/VFPXDeployment) so it works with Thor Check for Updates.
 
 ### 2022-04-16
 
