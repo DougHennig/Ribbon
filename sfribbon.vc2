@@ -521,6 +521,27 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		
 	ENDPROC
 
+	PROCEDURE RibbonDisplayButton.showmenu
+		* Display the menu below ourselves.
+		
+		local llInScreen
+		llInScreen = Thisform.HWnd = _screen.HWnd
+		*** TODO: the menu isn't quite in the correct position when used in a top-level form
+		***			but without the IF llInScreen, the timer kills the menu right after it's
+		***			displayed
+		*** TODO: if the ribbon is in _SCREEN, the timer kills the menu right after it's displayed
+		if llInScreen
+			dodefault(objtoclient(This, 1) + ;
+					This.Height + Thisform.Top + ;
+					iif(llInScreen, 0, sysmetric(9) + sysmetric(4)) + ;
+					iif(Thisform.Desktop or llInScreen, 0, sysmetric(9) + sysmetric(20)), ;
+				objtoclient(This, 2) + Thisform.Left + iif(llInScreen, 0, sysmetric(3)))
+		else
+			dodefault()
+		endif llInScreen
+		
+	ENDPROC
+
 	PROCEDURE tmrClick.Timer
 		* If the user clicks outside the ribbon when we're showing tabs only, redisplay
 		* tabs only.
@@ -594,10 +615,10 @@ DEFINE CLASS sfribbonbase AS container
 		<memberdata name="theme" display="Theme"/>
 		<memberdata name="theme_assign" display="Theme_Assign"/>
 		<memberdata name="addcontrol" display="AddControl"/>
-		<memberdata name="getthemecolor" display="GetThemeColor"/>
 		<memberdata name="cthemes" display="cThemes"/>
 		<memberdata name="cthemecolors" display="cThemeColors"/>
 		<memberdata name="addbar" display="AddBar"/>
+		<memberdata name="getthemecolor" display="GetThemeColor"/>
 		</VFPData>		&& XML Metadata for customizable properties
 	
 	PROCEDURE addbar		&& Adds a bar to the dropdown menu
@@ -718,13 +739,13 @@ DEFINE CLASS sfribbonbase AS container
 		
 	ENDPROC
 
-	PROTECTED PROCEDURE getthemecolor		&& Gets the specified color for the current theme
+	PROCEDURE getthemecolor		&& Gets the specified color for the current theme
 		*==============================================================================
 		* Method:			GetThemeColor
-		* Status:			Protected
+		* Status:			Public
 		* Purpose:			Gets the specified color for the current theme
 		* Author:			Doug Hennig
-		* Last Revision:	12/25/2020
+		* Last Revision:	07/23/2023
 		* Parameters:		tcColorName - the name of the color to get
 		* Returns:			the numeric color value for the specified color
 		* Environment in:	This.cThemeColors contains the colors for the current theme
@@ -1233,6 +1254,7 @@ DEFINE CLASS sfribbonmenuform AS form
 	Name = "sfribbonmenuform"
 	objectname = 		&& The name of the object that has the menu
 	oribbon = .NULL.		&& A reference to the ribbon
+	ShowInTaskBar = .F.
 	ShowWindow = 2
 	TitleBar = 0
 	Top = 0
@@ -2133,10 +2155,13 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 	PROCEDURE showmenu
 		* Display the menu below ourselves.
 		
-		dodefault(objtoclient(This, 1) + This.Height + Thisform.Top + ;
-				sysmetric(9) + sysmetric(4) + ;
-				iif(Thisform.Desktop, 0, sysmetric(9) + sysmetric(20)), ;
-			objtoclient(This, 2) + Thisform.Left + sysmetric(3))
+		local llInScreen
+		llInScreen = Thisform.HWnd = _screen.HWnd
+		dodefault(objtoclient(This, 1) + ;
+				This.Height + Thisform.Top + ;
+				iif(llInScreen, 0, sysmetric(9) + sysmetric(4)) + ;
+				iif(Thisform.Desktop or llInScreen, 0, sysmetric(9) + sysmetric(20)), ;
+			objtoclient(This, 2) + Thisform.Left + iif(llInScreen, 0, sysmetric(3)))
 		
 	ENDPROC
 

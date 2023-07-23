@@ -4,6 +4,18 @@ This project provides a ribbon control similar to that of Microsoft Office 365 t
 
 ## Release History
 
+### 2023-07-23
+
+* Fixed issue 14: made GetThemeColor public so it can be used in other places.
+
+* Fixed issue 15: SFRibbonMenuForm now has ShowInTaskbar set to .F. so the dropdown menu for a button doesn't appear in the Windows taskbar.
+
+* Fixed issue 16: the dropdown menu for a button is now positioned correctly when the ribbon is in _SCREEN.
+
+* Fixed issue 19: the menu for the RibbonDisplay button (appears when AllowShowTabsOnly is .T.) is now placed in the correct location when the ribbon is _SCREEN. However, the menu doesn't actually appear due to a timer issue (see issue 17); that's a bug to be fixed.
+
+* A new sample program, RibbonInScreen.prg, displays a ribbon in _SCREEN.
+
 ### 2023-07-08
 
 * Fixed issue 12: button not centered when section label is wider than button
