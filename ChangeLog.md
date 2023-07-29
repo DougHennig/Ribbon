@@ -4,6 +4,14 @@ This project provides a ribbon control similar to that of Microsoft Office 365 t
 
 ## Release History
 
+### 2023-07-29
+
+* Fixed issue 17: the menu for the RibbonDisplay button now appears correctly when the ribbon is in _SCREEN.
+
+* You can now use BINDEVENT to bind to a button's OnClick event instead of setting the Command property of the button.
+
+* You no longer get a "Not implemented" message when there's no command for a button.
+
 ### 2023-07-23
 
 * Fixed issue 14: made GetThemeColor public so it can be used in other places.

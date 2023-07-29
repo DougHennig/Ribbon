@@ -62,13 +62,17 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
     loSection.Caption = 'New'
     ```
 
-* There are two types of buttons: regular (the SFRibbonToolbarButton class) and horizontal (the SFRibbonToolbarButtonHorizontal class). The difference is that regular buttons are laid out left to right and have a 32 x 32 image with a caption below while horizontal buttons are stacked one on top of another and have a 16 x 16 image with a caption to the right. There can be multiple buttons in a section. Clicking a button either executes a command or displays a dropdown menu (discussed below).
+* There are two types of buttons: regular (the SFRibbonToolbarButton class) and horizontal (the SFRibbonToolbarButtonHorizontal class). The difference is that regular buttons are laid out left to right and have a 32 x 32 image with a caption below while horizontal buttons are stacked one on top of another and have a 16 x 16 image with a caption to the right. There can be multiple buttons in a section. Clicking a button either executes a command, raises an event, or displays a dropdown menu (discussed below).
 
     To add a regular button, call the AddButton method of a section, optionally passing the name of the button (if not passed, AddButton assigns a unique name).
     
     To add a horizontal button, call the AddHorizontalButton method of a section, optionally passing the name of the button (if not passed, AddHorizontalButton assigns a unique name).
 
-    Set the Caption, Image, DisabledImage, Command, WordWrap, and EnabledExpression properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption or set WordWrap to .T.. The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary. EnabledExpression optionally contains an expression (as a string) that Refresh evaluates to determine if the button is enabled.
+    Set the Caption, Image, DisabledImage, Command, WordWrap, and EnabledExpression properties of the button object returned by AddButton or AddHorizontalButton. To use a multi-line caption, include a carriage return (CHR(13) character) in the text for the caption or set WordWrap to .T.
+    
+    The code in Command is executed via the EXECSCRIPT() function, so it can consist of multiple statements separated by carriage returns if necessary. Alternatively, you can use BINDEVENT to bind to the button's OnClick event.
+    
+    EnabledExpression optionally contains an expression (as a string) that Refresh evaluates to determine if the button is enabled.
 
     ```foxpro
     loButton = loSection.AddButton()
@@ -78,6 +82,12 @@ A ribbon consists of multiple components, all of which are defined in SFRibbon.v
         .Command = 'Thisform.NewMail()' + chr(13) + ;
             'Thisform.Refresh()'
         .EnabledExpression = 'Thisform.IsButtonEnabled()'
+    endwith
+    loButton = loSection.AddButton()
+    with loButton
+        .Caption = 'Send' + chr(13) + 'Email'
+        .Image   = 'send.png'
+        bindevent(loButton, 'OnClick', Thisform, 'SendMail')
     endwith
     loButton = .AddHorizontalButton()
     with loButton
@@ -157,13 +167,13 @@ A ribbon has the following behavior:
 
 * Hovering the mouse over a button highlights the button in the "buttonhighlightcolor" color specified by the current theme.
 
-* Clicking a button executes the command for that button. If no command was specified and there is no menu for the button (see the next point), a messagebox with "Not implemented" appears.
+* Clicking a button executes the command for that button. If no command was specified and there is no menu for the button (see the next point), the OnClick event for the button is raised.
 
 * A down arrow appears in the caption for a button if it has a menu. Clicking the button displays the menu. Clicking the button again, clicking outside the menu, or moving the mouse outside the form hides the menu.
 
 * Hovering the mouse over a menu bar highlights the bar in the "menuitemhighlightcolor" color specified by the current theme.
 
-* Clicking a bar executes the command for that bar. If no command was specified and there is no submenu for the bar (see the next point), a messagebox with "Not implemented" appears.
+* Clicking a bar executes the command for that bar. If no command was specified and there is no submenu for the bar (see the next point), the OnClick event for the bar is raised.
 
 * A right arrow appears in the caption for a bar if it has a submenu. Submenus behave just like menus.
 

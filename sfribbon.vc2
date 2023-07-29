@@ -138,6 +138,7 @@ DEFINE CLASS sfribbon AS sfribbonbase OF "sfribbon.vcx"
 		Left = 430, ;
 		Name = "RibbonDisplayButton", ;
 		Top = 105, ;
+		type = Button, ;
 		Width = 16
 		*< END OBJECT: ClassLib="sfribbon.vcx" BaseClass="container" />
 
@@ -1830,6 +1831,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		*m: calculatewidth		&& Calculates the width of the button
 		*m: caption_assign
 		*m: image_assign
+		*m: onclick		&& Fired when the button is clicked if This.Command is empty and it doesn't have a submenu
 		*m: tooltiptext_assign
 		*m: visible_assign
 		*m: wordwrap_assign
@@ -1885,6 +1887,7 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		<memberdata name="disabledimage" display="DisabledImage"/>
 		<memberdata name="tooltiptext" display="ToolTipText"/>
 		<memberdata name="tooltiptext_assign" display="ToolTipText_Assign"/>
+		<memberdata name="onclick" display="OnClick"/>
 		</VFPData>
 
 	ADD OBJECT 'imgButton' AS image WITH ;
@@ -2037,12 +2040,12 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 			endif This.Parent.Parent.Parent.DisplayTabsOnly ...
 		catch
 		endtry
-		
-		* Execute the command if we have one or display the menu if not. Note that
-		* references to Thisform have to be changed to an object reference because
-		* EXECSCRIPT executes outside the object mechanism.
-		
 		do case
+		
+		* Execute the command if we have one. Note that references to Thisform have to
+		* be changed to an object reference because EXECSCRIPT executes outside the
+		* object mechanism.
+		
 			case not empty(This.Command)
 				lcCommand  = This.Command
 				if type('loThisform') <> 'O'
@@ -2053,10 +2056,16 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 					lcCommand = strtran(lcCommand, 'Thisform', 'loThisform', -1, -1, 1)
 				endif atc('loThisform', lcCommand) = 0
 				execscript(lcCommand)
+		
+		* Display the menu if we have one.
+		
 			case This.Menu.Count > 0
 				This.ShowMenu()
+		
+		* Raise the OnClick event.
+		
 			otherwise
-				messagebox('Not implemented')
+				raiseevent(This, 'OnClick')
 		endcase
 		
 	ENDPROC
@@ -2128,6 +2137,11 @@ DEFINE CLASS sfribbontoolbarbutton AS sfribbonbase OF "sfribbon.vcx"
 		if This.BackColor <> This.nBackColor
 			This.BackColor = This.nBackColor
 		endif This.BackColor <> This.nBackColor
+		
+	ENDPROC
+
+	PROCEDURE onclick		&& Fired when the button is clicked if This.Command is empty and it doesn't have a submenu
+		* Abstract method used for BINDEVENTS.
 		
 	ENDPROC
 

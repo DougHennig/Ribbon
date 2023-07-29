@@ -125,8 +125,11 @@ DEFINE CLASS form1 AS form
 						.Image   = lcImagePath + 'newitems.png'
 						.AddBar('E-\<mail Message', 'Thisform.SomeMethod()', ;
 							lcImagePath + 'newemailsmall.png')
-						.AddBar('\<Appointment', "messagebox('Appointment')", ;
+							&& call Thisform.SomeMethod as a command
+						loBar = .AddBar('\<Appointment', '', ;
 							lcImagePath + 'appointmentsmall.png')
+						bindevent(loBar, 'OnClick', This, 'SomeMethod')
+							&& use BINDEVENT to execute Thisform.SomeMethod
 						.AddBar('M\<eeting', "messagebox('Meeting')", ;
 							lcImagePath + 'meetingsmall.png')
 						.AddBar('Gro\<up', "messagebox('Group')", ;
@@ -337,7 +340,12 @@ DEFINE CLASS form1 AS form
 	ENDPROC
 
 	PROCEDURE somemethod
-		messagebox('This is some form method')
+		lnEvents = aevents(laEvents, 0)
+		if lnEvents = 0
+			messagebox('This is some form method called as a command')
+		else
+			messagebox('This is some form method called using BINDEVENT to OnClick')
+		endif lnEvents = 0
 		
 	ENDPROC
 
