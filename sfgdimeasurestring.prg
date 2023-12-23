@@ -29,10 +29,12 @@ messagebox('Width: ' + transform(lnWidth) + chr(13) + ;
 * Based on:			Custom
 * Purpose:			Calculates the dimensions of a string
 * Author:			Doug Hennig
-* Last revision:	11/17/2020
-* Notes:			Before calling MeasureString or GetWidth, you can modify
-*					the settings of the oFormat, oFont, oSize, and oGDI members
-*					as necessary.
+* Last revision:	12/23/2023
+* Notes:			1.	Before calling MeasureString or GetWidth, you can
+*						modify the settings of the oFormat, oFont, oSize, and
+*						oGDI members as necessary.
+*					2.	Scaling calculations adapted from Antonio Lopes'
+*						DPIAwareManager: https://github.com/atlopes/DPIAwareManager
 *==============================================================================
 
 #define ccCR						chr(13)
@@ -48,6 +50,14 @@ messagebox('Width: ' + transform(lnWidth) + chr(13) + ;
 #define cnFACTOR					104.166            
 	&& cnFACTOR is the number of report units per pixel: report units per inch
 	&& (10,000) divided by pixels per inch (96)
+#define DPI_STANDARD				96
+	&& standard screen DPI
+#define DPI_STANDARD_SCALE			100
+	&& standard scaling
+#define DPI_MAX_SCALE				300
+	&& max scaling
+#define DC_LOGPIXELSX				88
+	&& value to get X pixels
 
 define class SFGDIMeasureString as Custom
 	oGDI        = .NULL.
@@ -68,6 +78,8 @@ define class SFGDIMeasureString as Custom
 		&& the width of the bounding box
 	nHeight     = 0
 		&& the height of the bounding box
+	lGetDPIForWindow = .F.
+		&& can we use GetDpiForWindow
 
 	function Init
 		if type('_screen.System.Drawing') <> 'O'
@@ -90,6 +102,21 @@ define class SFGDIMeasureString as Custom
 
 			This.SetSize(100000, 100000)
 		endwith
+
+* Declare some API functions and determine which function we'll use to determine scaling.
+
+		declare long GetWindowDC in Win32API ;
+			long hWnd
+		declare long ReleaseDC in Win32API ;
+			long hWnd, long hDC
+		declare long GetDeviceCaps in Win32API  ;
+			long hDC, integer CapIndex
+		try
+			declare integer GetDpiForWindow in Win32API ;
+				long hWnd
+			This.lGetDPIForWindow = .T.
+		catch
+		endtry
 	endfunc
 
 * Nuke member objects.
@@ -161,7 +188,40 @@ define class SFGDIMeasureString as Custom
 			.nLines      = lnLines
 			.nWidth      = .oStringSize.Width
 			.nHeight     = .oStringSize.Height
+
+* If scaling is set to more than 100, that means the application is DPI aware,
+* in which case GdipMeasureString is incorrect because it isn't DPI aware. So,
+* we use the old fashioned method of calculating the text width.
+
+			if .GetMonitorDPIScale() > 100
+				lcFontName = .oFont.FontFamily.Name
+				lnFontSize = .oFont.SizeInPoints
+				.nWidth = txtwidth(lcString, lcFontName, lnFontSize) * ;
+					fontmetric(6, lcFontName, lnFontSize)
+			endif .GetMonitorDPIScale() > 100
 		endwith
+	endfunc
+
+* Determine scaling. Returns a percentage relative to 96 DPI (the standard).
+
+	function GetMonitorDPIScale()
+		local lnhWnd, ;
+			lnDPIX, ;
+			lnDPIY, ;
+			lnhDC
+		lnhWnd = _screen.hWnd
+		try
+			if This.lGetDPIForWindow
+				lnDPIX = GetDpiForWindow(lnhWnd)
+			else
+				lnhDC  = GetWindowDC(lnhWnd)
+				lnDPIX = GetDeviceCaps(lnhDC, DC_LOGPIXELSX)
+				ReleaseDC(lnhWnd, lnhDC)
+			endif This.lGetDPIForWindow
+		catch
+			lnDPIX = DPI_STANDARD
+		endtry
+		return min(max(int(lnDPIX/DPI_STANDARD * DPI_STANDARD_SCALE), DPI_STANDARD_SCALE), DPI_MAX_SCALE)
 	endfunc
 
 * Return the width of the specified string.

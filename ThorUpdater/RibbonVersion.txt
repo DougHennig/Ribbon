@@ -3,8 +3,8 @@ lparameters toUpdateObject
 * Set the properties of the passed updater object.
 
 with toUpdateObject
-	.VersionNumber    = '1.0 - 20230729'
-	.AvailableVersion = 'Ribbon-1.0-update-20230729'
+	.VersionNumber    = '1.0 - 20231223'
+	.AvailableVersion = 'Ribbon-1.0-update-20231223'
 	.Notes            = GetNotes()
 	.RegisterWithThor = GetRegisterWithThor()
 endwith
@@ -20,6 +20,14 @@ text to lcNotes noshow
 This project provides a ribbon control similar to that of Microsoft Office 365 to VFP forms.
 
 ## Release History
+
+### 2023-12-23
+
+* Fixed an issue with button widths introduced on 2023-07-08: if WordWrap is .T., buttons were sized too narrow.
+
+* Fixed issue 18: under some conditions, more than one menu is displayed.
+
+* Fixed issue #24: if an application has a manifest file that specifies DPI awareness, text width calculations were too wide.
 
 ### 2023-07-29
 

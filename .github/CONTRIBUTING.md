@@ -8,10 +8,12 @@
 - Fork the project: see this [guide](https://www.dataschool.io/how-to-contribute-on-github/) for setting up and using a fork.
 - Make whatever changes are necessary.
 - Use [FoxBin2Prg](https://github.com/fdbozzo/foxbin2prg) to create text files for all VFP binary files (SCX, VCX, DBF, etc.)
-- Update the Releases section of README.md and describe the changes. Also, make any necessary changes to the documentation on that page.
+- Update ChangeLog.md and describe the changes. Also, make any necessary changes to the documentation in README.md.
+- If you haven't already done so, install VFPX Deployment: choose Check for Updates from the Thor menu, turn on the checkbox for VFPX Deployment, and click Install.
+- Run the VFPX Deployment tool to create the installation files: choose VFPX Project Deployment from the Thor Tools, Application menu. Alternately, execute EXECSCRIPT(_screen.cThorDispatcher, 'Thor_Tool_DeployVFPXProject').
 - Commit the changes.
 - Push to your fork.
 - Create a pull request; ensure the description clearly describes the problem and solution or the enhancement.
 
 ----
-Last changed: 2022-04-09
+Last changed: 2023-12-23
