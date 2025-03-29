@@ -29,7 +29,7 @@ messagebox('Width: ' + transform(lnWidth) + chr(13) + ;
 * Based on:			Custom
 * Purpose:			Calculates the dimensions of a string
 * Author:			Doug Hennig
-* Last revision:	12/23/2023
+* Last revision:	03/26/2024
 * Notes:			1.	Before calling MeasureString or GetWidth, you can
 *						modify the settings of the oFormat, oFont, oSize, and
 *						oGDI members as necessary.
@@ -133,7 +133,10 @@ define class SFGDIMeasureString as Custom
 			lnChars, ;
 			lnLines, ;
 			lcString, ;
-			loStringSize
+			lcFontName, ;
+			lnFontSize, ;
+			lcStyle, ;
+			lnWidth
 
 * Ensure the parameters are passed correctly.
 
@@ -150,6 +153,7 @@ define class SFGDIMeasureString as Custom
 				error cnERR_ARGUMENT_INVALID
 				return
 		endcase
+		luStyle = NULL
 		do case
 
 * Set up the font object if the font and size were specified.
@@ -171,10 +175,12 @@ define class SFGDIMeasureString as Custom
 			lnChars = 0
 			lnLines = 0
 
-* If the string has CHR(13) but not CHR(10), insert them.
+* If the string has CHR(13) but not CHR(10), insert them. Also, GdipMeasureString
+* seems to measure strings with CR a little narrower than needed, so add a little
+* fudge character to make it wider.
 
 			if ccCR $ tcString and not ccLF $ tcString
-				lcString = strtran(tcString, ccCR, ccCRLF)
+				lcString = strtran(tcString, ccCR, 'i' + ccCRLF)
 			else
 				lcString = tcString
 			endif ccCR $ tcString ...
@@ -196,8 +202,11 @@ define class SFGDIMeasureString as Custom
 			if .GetMonitorDPIScale() > 100
 				lcFontName = .oFont.FontFamily.Name
 				lnFontSize = .oFont.SizeInPoints
-				.nWidth = txtwidth(lcString, lcFontName, lnFontSize) * ;
-					fontmetric(6, lcFontName, lnFontSize)
+				lcStyle    = iif(isnull(luStyle), iif(.oFont.Bold, 'B', '') + ;
+					iif(.oFont.Italic, 'I', ''), luStyle)
+				lnWidth    = txtwidth(lcString, lcFontName, lnFontSize, lcStyle) * ;
+					fontmetric(6, lcFontName, lnFontSize, lcStyle)
+				.nWidth    = max(.nWidth, lnWidth)
 			endif .GetMonitorDPIScale() > 100
 		endwith
 	endfunc
@@ -313,7 +322,7 @@ define class SFGDIMeasureString as Custom
 			if vartype(tuStyle) = 'N'
 				lnStyle = tuStyle
 			else
-				lcStyle = iif(vartype(tcStyle) = 'C', tcStyle, '')
+				lcStyle = iif(vartype(tuStyle) = 'C', tuStyle, '')
 				do case
 					case lcStyle = 'BI'
 						lnStyle = .FontStyle.BoldItalic

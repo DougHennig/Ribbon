@@ -4,13 +4,17 @@ This project provides a ribbon control similar to that of Microsoft Office 365 t
 
 ## Release History
 
+### 2025-03-29
+
+* Fixed issue 25: the form the ribbon is on wouldn't close after activating a dropdown menu.
+
 ### 2023-12-23
 
 * Fixed an issue with button widths introduced on 2023-07-08: if WordWrap is .T., buttons were sized too narrow.
 
 * Fixed issue 18: under some conditions, more than one menu is displayed.
 
-* Fixed issue #24: if an application has a manifest file that specifies DPI awareness, text width calculations were too wide.
+* Fixed issue 24: if an application has a manifest file that specifies DPI awareness, text width calculations were too wide.
 
 ### 2023-07-29
 
